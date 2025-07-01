@@ -12,7 +12,9 @@ cd "$(dirname "$0")"
 
 # Install dependencies if needed
 echo "🔧 Installing dependencies..."
-pip install -r requirements.txt
+cd ../../  # Go to project root
+poetry install --with viz
+cd viz/streamlit/  # Return to streamlit directory
 
 # Set environment variables from .env if it exists
 if [ -f "../../.env" ]; then
@@ -24,6 +26,7 @@ fi
 
 # Run Streamlit
 echo "🚀 Launching Streamlit..."
-streamlit run app.py --server.address=0.0.0.0 --server.port=8501
+cd ../../  # Go to project root to use poetry
+poetry run streamlit run viz/streamlit/app.py --server.address=0.0.0.0 --server.port=8501
 
 echo "✨ Streamlit application started successfully!"
