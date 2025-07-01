@@ -612,6 +612,55 @@ services:
     networks:
       - data-stack
 
+  # MCP Server - Model Context Protocol for AI/LLM integration
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: data-stack-mcp-server
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - APP_NAME=MCP Server
+      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+      - SNOWFLAKE_USER=${SNOWFLAKE_USERNAME}
+      - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+      - DUCKDB_PATH=/data/duckdb/main.db
+      - DAGSTER_HOST=dagster-webserver
+      - DAGSTER_PORT=3000
+      - DBT_PROJECT_DIR=/app/transform
+      - DATAHUB_SERVER=http://datahub-gms:8080
+      - DATAHUB_TOKEN=${DATAHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - ENABLE_MONITORING=true
+      - MONITORING_INTERVAL=30
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    volumes:
+      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
+      - ./transform:/app/transform
+      - ./dbt_profiles:/app/dbt_profiles
+    ports:
+      - "8003:80"
+    networks:
+      - data-stack
+    depends_on:
+      - postgres
+      - datahub-gms
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp.rule=Host(`mcp.localhost`)"
+      - "traefik.http.services.mcp.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   # Traefik reverse proxy and dashboard
   traefik:
     image: traefik:v3.0

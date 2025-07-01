@@ -1,0 +1,33 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deploy/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to ECR
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Deploy with Helm
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      run: |
+        helm upgrade --install mcp-server ./mcp-server/helm --namespace default --create-namespace
+
+    - name: Post Deployment Steps
+      run: |
+        echo "Application deployed successfully!"
+
