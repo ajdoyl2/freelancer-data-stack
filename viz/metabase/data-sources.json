@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "config_type": "data_sources",
+  "databases": [
+    {
+      "name": "PostgreSQL Data Stack",
+      "engine": "postgres",
+      "details": {
+        "host": "postgres",
+        "port": 5432,
+        "dbname": "data_stack",
+        "user": "postgres",
+        "password": "{{POSTGRES_DATA_PASSWORD}}",
+        "ssl": false,
+        "auto_run_queries": true,
+        "refingerprint": true
+      },
+      "auto_run_queries": true,
+      "refingerprint": true,
+      "schedules": {}
+    },
+    {
+      "name": "Snowflake Analytics",
+      "engine": "snowflake",
+      "details": {
+        "account": "{{SNOWFLAKE_ACCOUNT}}",
+        "user": "{{SNOWFLAKE_USERNAME}}",
+        "password": "{{SNOWFLAKE_PASSWORD}}",
+        "db": "{{SNOWFLAKE_DATABASE}}",
+        "schema": "{{SNOWFLAKE_SCHEMA}}",
+        "warehouse": "{{SNOWFLAKE_WAREHOUSE}}",
+        "role": "{{SNOWFLAKE_ROLE}}",
+        "auto_run_queries": true,
+        "refingerprint": true
+      },
+      "auto_run_queries": true,
+      "refingerprint": true,
+      "schedules": {}
+    },
+    {
+      "name": "DuckDB Local",
+      "engine": "sqlite",
+      "details": {
+        "db": "/metabase-data/duckdb/main.db",
+        "auto_run_queries": true,
+        "refingerprint": true
+      },
+      "auto_run_queries": true,
+      "refingerprint": true,
+      "schedules": {}
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+name: "DBT Run Models"
+command: "dbt run --select model+"
+tags:
+  - dbt
+  - data-transformation
+  - modeling
+description: "Run dbt models and their children."
+arguments: []

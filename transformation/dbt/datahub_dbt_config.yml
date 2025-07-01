@@ -1,0 +1,47 @@
+source:
+  type: "dbt"
+  config:
+    # Coordinates
+    manifest_path: "./target/manifest.json"
+    catalog_path: "./target/catalog.json"
+    
+    # Options
+    target_platform: "{{ env_var('DBT_TARGET_PLATFORM', 'duckdb') }}"
+    environment: "{{ env_var('DBT_ENVIRONMENT', target.name) }}"
+    
+    # DataHub connection
+    datahub_api:
+      server: "{{ env_var('DATAHUB_REST_URL', 'http://localhost:8080') }}"
+      token: "{{ env_var('DATAHUB_TOKEN', '') }}"
+    
+    # Additional metadata
+    meta_mapping:
+      "dbt": "{{ target.name }}"
+      "project": "freelancer_analytics"
+      "version": "1.0.0"
+    
+    # Platform-specific configurations
+    platform_instance: "{{ target.name }}"
+    
+    # Include/exclude patterns
+    node_type_pattern:
+      allow:
+        - "model"
+        - "seed"
+        - "test"
+        - "snapshot"
+      deny: []
+    
+    # Tag configurations
+    tag_measures_and_dimensions: true
+    strip_user_ids_from_email: true
+    
+    # Lineage options
+    disable_dbt_node_creation: false
+    enable_meta_mapping: true
+
+sink:
+  type: "datahub-rest"
+  config:
+    server: "{{ env_var('DATAHUB_REST_URL', 'http://localhost:8080') }}"
+    token: "{{ env_var('DATAHUB_TOKEN', '') }}"

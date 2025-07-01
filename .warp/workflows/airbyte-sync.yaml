@@ -1,0 +1,11 @@
+name: "Airbyte Sync"
+command: "docker exec airbyte-server airbyte-ci connectors sync --connection-id $connection_id"
+tags:
+  - airbyte
+  - sync
+  - data-integration
+description: "Trigger Airbyte data sync for a specific connection"
+arguments:
+  - name: connection_id
+    description: "The Airbyte connection ID to sync"
+    default_value: ""

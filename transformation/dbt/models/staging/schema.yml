@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: stg_freelancers
+    description: "Staging table for freelancer data"
+    columns:
+      - name: freelancer_id
+        description: "Unique identifier for freelancer"
+        tests:
+          - unique
+          - not_null
+      - name: email
+        description: "Freelancer email address"
+        tests:
+          - unique
+          - not_null
+          - dbt_expectations.expect_column_values_to_match_regex:
+              regex: '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+      - name: hourly_rate
+        description: "Freelancer's hourly rate"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1000
+      - name: rating
+        description: "Freelancer rating (1-5 scale)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1.0
+              max_value: 5.0
+
+  - name: stg_projects
+    description: "Staging table for project data"
+    columns:
+      - name: project_id
+        description: "Unique identifier for project"
+        tests:
+          - unique
+          - not_null
+      - name: freelancer_id
+        description: "Reference to freelancer"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_freelancers')
+              field: freelancer_id
+      - name: project_value
+        description: "Project monetary value"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 100000
+      - name: status
+        description: "Project status"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['pending', 'in_progress', 'completed', 'cancelled']

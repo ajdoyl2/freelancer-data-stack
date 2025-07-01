@@ -1,0 +1,18 @@
+apiVersion: v2
+name: mcp-server
+description: A Helm chart for MCP Server deployment
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - mcp
+  - model-context-protocol
+  - data
+  - fastapi
+
+maintainers:
+  - name: Data Team
+    email: data@company.com
+
+sources:
+  - https://github.com/company/mcp-server

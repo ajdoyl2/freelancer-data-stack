@@ -1,0 +1,11 @@
+name: "View Data Stack Logs"
+command: "docker-compose logs --tail=100 -f {{service_name}}"
+tags:
+  - docker
+  - logs
+  - debugging
+description: "View logs for a specific service in the data stack"
+arguments:
+  - name: "service_name"
+    description: "Name of the service to view logs for (e.g., postgres, airbyte-server, dagster-daemon)"
+    default_value: ""

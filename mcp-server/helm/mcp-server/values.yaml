@@ -1,0 +1,113 @@
+# Default values for mcp-server
+replicaCount: 2
+
+image:
+  repository: mcp-server
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: mcp-server.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables
+env:
+  - name: DEBUG
+    value: "false"
+  - name: ENABLE_MONITORING
+    value: "true"
+
+# Secrets
+secrets:
+  openai_api_key: ""
+  snowflake_password: ""
+  datahub_token: ""
+
+# ConfigMap data
+config:
+  snowflake_account: ""
+  snowflake_user: ""
+  snowflake_warehouse: ""
+  snowflake_database: ""
+  snowflake_schema: ""
+  duckdb_path: "/data/duckdb.db"
+  dagster_host: "dagster-webserver"
+  dagster_port: "3000"
+  datahub_server: "http://datahub-gms:8080"
+  openai_model: "gpt-4"
+
+# Persistent volume for DuckDB
+persistence:
+  enabled: true
+  size: 8Gi
+  storageClass: ""
+  accessMode: ReadWriteOnce
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5

@@ -49,12 +49,18 @@ This stack spins up the following services with all volumes mapped to `~/data-st
 
 Key environment variables to configure in your `.env` file:
 
+### Core Services
 - `POSTGRES_PASSWORD`: Password for PostgreSQL database
 - `NEO4J_PASSWORD`: Password for Neo4j (used by DataHub)
 - `DATAHUB_SECRET`: Secret key for DataHub (minimum 32 characters)
 - `AIRFLOW_USERNAME/AIRFLOW_PASSWORD`: Airflow web UI credentials
 - `AIRFLOW_FERNET_KEY`: Encryption key for Airflow (auto-generated)
 - `JUPYTER_TOKEN`: Optional token for Jupyter access
+
+### Streaming Capabilities (Optional)
+- `ENABLE_STREAMING_STACK`: Set to `true` to enable Kafka + Materialize services
+- `KAFKA_BOOTSTRAP_SERVERS`: Kafka connection string (default: `localhost:9092`)
+- `KAFKA_TOPIC_NAME`: Topic name for dbt incremental triggers (default: `dbt_incremental`)
 
 ## Volume Mapping
 
@@ -78,11 +84,12 @@ All persistent data is stored in `~/data-stack/volumes/` with subdirectories for
 
 This stack provides a complete modern data platform suitable for:
 - Data ingestion and ETL/ELT pipelines
-- Data orchestration with Apache Airflow
+- Data orchestration with Apache Airflow and Dagster
 - Data quality validation and monitoring
 - Data cataloging and discovery
 - Business intelligence and analytics
 - Data application development
+- Real-time streaming and micro-batch processing (optional)
 
 ## Prerequisites
 
@@ -104,6 +111,56 @@ catalog/             # DataHub metadata configs
 mcp-server/          # Model Context Protocol server
 scripts/             # Utility scripts
 ```
+
+## Streaming & Real-time Features
+
+The data stack includes optional streaming capabilities for real-time and micro-batch processing:
+
+### Enabling Streaming Features
+
+To enable streaming services, add the following to your `.env` file:
+```bash
+ENABLE_STREAMING_STACK=true
+```
+
+Then start the stack with the streaming profile:
+```bash
+docker-compose --profile streaming up -d
+```
+
+### Available Streaming Services
+
+- **Kafka Connect**: Additional streaming integrations and connectors
+- **Materialize**: Real-time data transformations and materialized views
+- **KSQL**: Stream processing with SQL (alternative to Materialize)
+- **Dagster Kafka Sensor**: Consumes Kafka messages to trigger dbt incremental runs
+
+### Streaming Workflow
+
+1. **Data Sources → Kafka**: Stream data changes to Kafka topics
+2. **Kafka → Dagster Sensor**: Kafka messages trigger Dagster asset sensors
+3. **Dagster → dbt**: Incremental dbt models process streaming data
+4. **Materialize**: Real-time materialized views for immediate analytics
+
+### Configuration Options
+
+- `KAFKA_TOPIC_NAME`: Topic for triggering dbt runs (default: `dbt_incremental`)
+- `KAFKA_BOOTSTRAP_SERVERS`: Kafka connection string (default: `localhost:9092`)
+
+### Client Feature Flags
+
+For clients requiring streaming capabilities:
+- Set `ENABLE_STREAMING_STACK=true` in environment
+- Configure Kafka topics based on data sources
+- Enable Dagster Kafka sensor in the UI (default: disabled)
+- Set up Materialize connections for real-time views
+
+### Service Endpoints (Streaming)
+
+- **Kafka Connect**: http://localhost:8083
+- **Materialize SQL**: postgresql://localhost:6875
+- **Materialize HTTP**: http://localhost:6876
+- **KSQL Server**: http://localhost:8088
 
 ## Support
 

@@ -1,0 +1,8 @@
+name: "Start Dagster UI"
+command: "dagster-webserver -h 0.0.0.0 -p 3001"
+tags:
+  - dagster
+  - ui
+  - data-orchestration
+description: "Start the Dagster web UI for data orchestration"
+arguments: []

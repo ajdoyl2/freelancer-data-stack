@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-config
+  labels:
+    {{- include "mcp-server.labels" . | nindent 4 }}
+data:
+  snowflake_account: {{ .Values.config.snowflake_account | quote }}
+  snowflake_user: {{ .Values.config.snowflake_user | quote }}
+  snowflake_warehouse: {{ .Values.config.snowflake_warehouse | quote }}
+  snowflake_database: {{ .Values.config.snowflake_database | quote }}
+  snowflake_schema: {{ .Values.config.snowflake_schema | quote }}
+  duckdb_path: {{ .Values.config.duckdb_path | quote }}
+  dagster_host: {{ .Values.config.dagster_host | quote }}
+  dagster_port: {{ .Values.config.dagster_port | quote }}
+  datahub_server: {{ .Values.config.datahub_server | quote }}
+  openai_model: {{ .Values.config.openai_model | quote }}

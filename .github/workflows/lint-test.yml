@@ -1,0 +1,280 @@
+name: Code Quality - Lint and Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [ingestion, transformation, orchestration, quality, viz]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+
+    - name: Install package
+      run: poetry install --no-interaction
+
+    - name: Run Ruff (linting)
+      run: |
+        if [ -d "${{ matrix.component }}" ]; then
+          poetry run ruff check ${{ matrix.component }}/ --output-format=github
+        fi
+
+    - name: Run Black (formatting check)
+      run: |
+        if [ -d "${{ matrix.component }}" ]; then
+          poetry run black --check ${{ matrix.component }}/
+        fi
+
+    - name: Run isort (import sorting check)
+      run: |
+        if [ -d "${{ matrix.component }}" ]; then
+          poetry run isort --check-only ${{ matrix.component }}/
+        fi
+
+  sql-lint:
+    name: SQL Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Install dependencies
+      run: poetry install --no-interaction --no-root
+
+    - name: Run SQLFluff (SQL linting)
+      run: |
+        find . -name "*.sql" -not -path "./.venv/*" -not -path "./.*" | head -1 > /dev/null
+        if [ $? -eq 0 ]; then
+          poetry run sqlfluff lint --dialect postgres --format github-annotation-native
+        else
+          echo "No SQL files found to lint"
+        fi
+
+  docker-lint:
+    name: Docker Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Hadolint (Dockerfile linting)
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: docker-compose.yml
+        format: sarif
+        output-file: hadolint-results.sarif
+        no-fail: true
+
+    - name: Upload analysis results to GitHub
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif-file: hadolint-results.sarif
+        wait-for-processing: true
+
+  test-python:
+    name: Python Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+        component: [ingestion, transformation, orchestration, quality]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root --with dev
+
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: |
+        if [ -d "${{ matrix.component }}/tests" ]; then
+          poetry run pytest ${{ matrix.component }}/tests/ -v --cov=${{ matrix.component }} --cov-report=xml
+        elif [ -f "${{ matrix.component }}/test_*.py" ]; then
+          poetry run pytest ${{ matrix.component }}/test_*.py -v --cov=${{ matrix.component }} --cov-report=xml
+        else
+          echo "No tests found for ${{ matrix.component }}"
+        fi
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: ${{ matrix.component }}
+        name: ${{ matrix.component }}-coverage
+        fail_ci_if_error: false
+
+  test-docker-compose:
+    name: Docker Compose Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create test environment file
+      run: |
+        cat > .env << EOF
+        POSTGRES_PASSWORD=test123
+        NEO4J_PASSWORD=test123
+        DATAHUB_SECRET=test-secret-key-must-be-32-chars-long
+        AIRFLOW_USERNAME=admin
+        AIRFLOW_PASSWORD=admin
+        AIRFLOW_FERNET_KEY=test-fernet-key-32-chars-long!!!
+        JUPYTER_TOKEN=test-token
+        EOF
+
+    - name: Test docker-compose configuration
+      run: |
+        docker compose -f docker-compose-test.yml config
+
+    - name: Start core services for integration test
+      run: |
+        # Create volumes directory
+        mkdir -p $HOME/data-stack/volumes
+        
+        # Start minimal services for testing
+        docker compose -f docker-compose-test.yml up -d postgres redis
+        
+        # Wait for services to be healthy
+        timeout 60s bash -c 'until docker compose -f docker-compose-test.yml ps postgres | grep -q healthy; do sleep 2; done'
+        timeout 60s bash -c 'until docker compose -f docker-compose-test.yml ps redis | grep -q healthy; do sleep 2; done'
+
+    - name: Test service connectivity
+      run: |
+        # Test PostgreSQL connection
+        docker compose -f docker-compose-test.yml exec -T postgres psql -U postgres -c "SELECT version();"
+        
+        # Test Redis connection
+        docker compose -f docker-compose-test.yml exec -T redis redis-cli ping
+
+    - name: Cleanup
+      if: always()
+      run: |
+        docker compose -f docker-compose-test.yml down -v
+        docker system prune -f
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif-file: 'trivy-results.sarif'
+
+  pre-commit:
+    name: Pre-commit Hooks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Run pre-commit
+      uses: pre-commit/action@v3.0.0

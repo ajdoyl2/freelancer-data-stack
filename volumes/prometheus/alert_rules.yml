@@ -1,0 +1,130 @@
+groups:
+  - name: data_stack_alerts
+    rules:
+      # Database alerts
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 1 minute"
+
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High number of database connections"
+          description: "Database has {{ $value }} active connections"
+
+      # Airflow alerts
+      - alert: AirflowDown
+        expr: up{job="airflow"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: orchestration
+        annotations:
+          summary: "Airflow webserver is down"
+          description: "Airflow webserver has been down for more than 2 minutes"
+
+      - alert: AirflowTaskFailure
+        expr: increase(airflow_task_failed_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          component: orchestration
+        annotations:
+          summary: "Airflow task failure detected"
+          description: "{{ $value }} Airflow tasks have failed in the last 5 minutes"
+
+      # DataHub alerts
+      - alert: DataHubDown
+        expr: up{job="datahub-gms"} == 0
+        for: 3m
+        labels:
+          severity: warning
+          component: metadata
+        annotations:
+          summary: "DataHub GMS is down"
+          description: "DataHub GMS has been down for more than 3 minutes"
+
+      # Kafka alerts
+      - alert: KafkaDown
+        expr: up{job="kafka"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: messaging
+        annotations:
+          summary: "Kafka broker is down"
+          description: "Kafka broker has been down for more than 2 minutes"
+
+      # Elasticsearch alerts
+      - alert: ElasticsearchDown
+        expr: up{job="elasticsearch"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: search
+        annotations:
+          summary: "Elasticsearch is down"
+          description: "Elasticsearch has been down for more than 2 minutes"
+
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 90% for more than 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 90% for more than 5 minutes"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is below 10% on {{ $labels.device }}"
+
+      # Data quality alerts
+      - alert: DataQualityFailure
+        expr: great_expectations_validation_success_rate < 0.95
+        for: 1m
+        labels:
+          severity: warning
+          component: quality
+        annotations:
+          summary: "Data quality validation failure"
+          description: "Data validation success rate is {{ $value }}, below 95% threshold"
+
+      # Pipeline alerts
+      - alert: DataPipelineStalled
+        expr: time() - last_successful_pipeline_run > 86400
+        for: 0m
+        labels:
+          severity: critical
+          component: pipeline
+        annotations:
+          summary: "Data pipeline has not run successfully in 24 hours"
+          description: "Last successful pipeline run was {{ $value }} seconds ago"

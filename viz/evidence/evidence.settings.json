@@ -1,0 +1,42 @@
+{
+  "databases": {
+    "duckdb": {
+      "type": "duckdb",
+      "filename": "/data/main.db"
+    },
+    "snowflake": {
+      "type": "snowflake",
+      "account": "${SNOWFLAKE_ACCOUNT}",
+      "username": "${SNOWFLAKE_USERNAME}",
+      "password": "${SNOWFLAKE_PASSWORD}",
+      "role": "${SNOWFLAKE_ROLE}",
+      "warehouse": "${SNOWFLAKE_WAREHOUSE}",
+      "database": "${SNOWFLAKE_DATABASE}",
+      "schema": "${SNOWFLAKE_SCHEMA}"
+    },
+    "postgres": {
+      "type": "postgres",
+      "host": "postgres",
+      "port": 5432,
+      "database": "data_stack",
+      "user": "postgres",
+      "password": "postgres",
+      "ssl": false
+    }
+  },
+  "default_database": "duckdb",
+  "connection_timeout": 30000,
+  "command_timeout": 60000,
+  "page_title": "Freelancer Data Stack Dashboard",
+  "layout": "fixed",
+  "serve_static_files": true,
+  "static_assets_dir": "/app/static",
+  "custom_formatting": {
+    "date_format": "YYYY-MM-DD",
+    "currency_format": "$#,##0.00"
+  },
+  "development": {
+    "port": 3000,
+    "open_browser": false
+  }
+}
