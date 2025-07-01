@@ -97,12 +97,38 @@ Production-ready configurations:
 - Long retention periods
 - Enhanced security and monitoring
 
-### Secrets Management
+### Credential Management Strategy
 
-Sensitive values should be stored in:
-1. AWS Secrets Manager (recommended for production)
-2. Environment variables
-3. Terraform variable files (for development only, never commit to git)
+#### 🔒 Security Approach
+- **Placeholders for validation**: Use fake values for syntax checking and CI/CD testing
+- **Real credentials from .env**: Load actual values from `.env` file for deployments
+- **Never commit secrets**: All sensitive values are gitignored or use placeholders
+
+#### 📋 When to Use Each Approach
+
+| Scenario | Credential Source | Command |
+|----------|------------------|----------|
+| **Syntax validation** | Placeholders in tfvars | `make validate` |
+| **CI/CD testing** | Placeholders in tfvars | `make plan-local` |
+| **Local development** | Real values from .env | `./scripts/deploy-with-env.sh local plan` |
+| **Production deployment** | Real values from .env | `./scripts/deploy-with-env.sh prod apply` |
+
+#### 📁 Required Environment Variables (.env file)
+
+The following variables must be set in your `.env` file for real deployments:
+
+```bash
+# Snowflake Configuration
+SNOWFLAKE_ACCOUNT=your-account-id
+SNOWFLAKE_USERNAME=your-username
+SNOWFLAKE_PASSWORD=your-password
+SNOWFLAKE_ROLE=ACCOUNTADMIN
+SNOWFLAKE_WAREHOUSE=COMPUTE_WH
+SNOWFLAKE_DATABASE=ANALYTICS
+
+# AWS Configuration (optional, can use AWS_PROFILE)
+AWS_PROFILE=your-aws-profile
+```
 
 ## Available Commands
 

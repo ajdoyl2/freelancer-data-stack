@@ -2,9 +2,11 @@
 environment = "local"
 
 # Snowflake Configuration (local development)
-snowflake_account      = "your-snowflake-account"
-snowflake_username     = "your-snowflake-username"
-snowflake_password     = "your-snowflake-password"
+# Note: For validation testing, using placeholder values
+# Replace with real values when ready to deploy
+snowflake_account      = "placeholder-account"
+snowflake_username     = "placeholder-username"
+snowflake_password     = "placeholder-password"
 snowflake_role         = "SYSADMIN"
 snowflake_database_name = "FREELANCER_DATA_LOCAL"
 snowflake_warehouse_size = "X-SMALL"

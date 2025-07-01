@@ -15,7 +15,7 @@ output "schemas" {
 
 output "app_role_name" {
   description = "Name of the application role"
-  value       = snowflake_role.app_role.name
+  value       = snowflake_account_role.app_role.name
 }
 
 output "app_user_name" {

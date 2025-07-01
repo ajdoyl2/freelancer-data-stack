@@ -29,7 +29,7 @@ resource "snowflake_schema" "schemas" {
 }
 
 # Snowflake Role for the application
-resource "snowflake_role" "app_role" {
+resource "snowflake_account_role" "app_role" {
   name    = "${upper(var.project_name)}_${upper(var.environment)}_ROLE"
   comment = "Role for ${var.project_name} application in ${var.environment} environment"
 }
@@ -41,44 +41,47 @@ resource "snowflake_user" "app_user" {
   comment      = "User for ${var.project_name} application in ${var.environment} environment"
   
   default_warehouse = snowflake_warehouse.main.name
-  default_role      = snowflake_role.app_role.name
+  default_role      = snowflake_account_role.app_role.name
   default_namespace = "${snowflake_database.main.name}.${snowflake_schema.schemas["RAW"].name}"
   
   must_change_password = false
 }
 
 # Grant role to user
-resource "snowflake_role_grants" "app_role_grants" {
-  role_name = snowflake_role.app_role.name
-  
-  users = [snowflake_user.app_user.name]
+resource "snowflake_grant_account_role" "app_role_to_user" {
+  role_name = snowflake_account_role.app_role.name
+  user_name = snowflake_user.app_user.name
 }
 
 # Grant warehouse usage to role
-resource "snowflake_warehouse_grant" "app_warehouse_grant" {
-  warehouse_name = snowflake_warehouse.main.name
-  privilege      = "USAGE"
-  
-  roles = [snowflake_role.app_role.name]
+resource "snowflake_grant_privileges_to_account_role" "warehouse_usage" {
+  privileges        = ["USAGE"]
+  account_role_name = snowflake_account_role.app_role.name
+  on_account_object {
+    object_type = "WAREHOUSE"
+    object_name = snowflake_warehouse.main.name
+  }
 }
 
 # Grant database usage to role
-resource "snowflake_database_grant" "app_database_grant" {
-  database_name = snowflake_database.main.name
-  privilege     = "USAGE"
-  
-  roles = [snowflake_role.app_role.name]
+resource "snowflake_grant_privileges_to_account_role" "database_usage" {
+  privileges        = ["USAGE"]
+  account_role_name = snowflake_account_role.app_role.name
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.main.name
+  }
 }
 
 # Grant schema privileges to role
-resource "snowflake_schema_grant" "app_schema_grants" {
+resource "snowflake_grant_privileges_to_account_role" "schema_privileges" {
   for_each = snowflake_schema.schemas
   
-  database_name = snowflake_database.main.name
-  schema_name   = each.value.name
-  privilege     = "ALL"
-  
-  roles = [snowflake_role.app_role.name]
+  privileges        = ["USAGE", "CREATE TABLE", "CREATE VIEW", "CREATE STAGE", "CREATE SEQUENCE"]
+  account_role_name = snowflake_account_role.app_role.name
+  on_schema {
+    schema_name   = "\"${snowflake_database.main.name}\".\"${each.value.name}\""
+  }
 }
 
 # File format for CSV
