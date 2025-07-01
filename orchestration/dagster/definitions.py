@@ -13,7 +13,7 @@ from dagster import (
     ConfigurableResource,
     InitResourceContext,
 )
-from dagster_datahub import DataHubResource
+# from dagster_datahub import DataHubResource
 
 from . import assets, jobs, schedules_sensors
 
@@ -60,11 +60,11 @@ class FreelancerDataStackResource(ConfigurableResource):
         return self
 
 
-# DataHub resource for metadata integration
-datahub_resource = DataHubResource(
-    gms_url=EnvVar("DATAHUB_GMS_URL").default("http://localhost:8080"),
-    gms_token=EnvVar("DATAHUB_GMS_TOKEN").default(""),
-)
+# DataHub resource for metadata integration (disabled for now)
+# datahub_resource = DataHubResource(
+#     gms_url=EnvVar("DATAHUB_GMS_URL").default("http://localhost:8080"),
+#     gms_token=EnvVar("DATAHUB_GMS_TOKEN").default(""),
+# )
 
 
 # Custom resource for the freelancer data stack
@@ -121,7 +121,7 @@ defs = Definitions(
     schedules=all_schedules,
     sensors=all_sensors,
     resources={
-        "datahub": datahub_resource,
+        # "datahub": datahub_resource,  # Disabled for now
         "freelancer_stack": freelancer_stack_resource,
     },
 )
