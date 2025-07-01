@@ -8,10 +8,14 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
+# Core data transformation tools
+dbt-core = "^1.8.0"  # dbt version compatible with dagster protobuf requirements
+dbt-duckdb = "^1.8.0"  # DuckDB adapter for dbt
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.8.0"
-black = "^24.0.0"
+# Code quality and formatting tools - updated to latest stable versions
+ruff = "^0.12.1"  # Fast Python linter and formatter - latest stable
+black = "^25.1.0"  # Code formatter - latest stable
 isort = "^5.13.0"
 sqlfluff = "^3.0.0"
 pre-commit = "^4.0.0"
@@ -26,11 +30,53 @@ jupyterlab = "^4.3.0"
 [tool.poetry.group.datahub.dependencies]
 acryl-datahub = "^0.15.0"
 
+# MCP Server dependencies - migrated from mcp-server/requirements.txt
+[tool.poetry.group.server.dependencies]
+# FastAPI web framework and ASGI server
+fastapi = "^0.115.0"  # Web framework for building APIs
+uvicorn = { extras = ["standard"], version = "^0.24.0" }  # ASGI server with standard extras
+websockets = "^12.0.0"  # WebSocket support
+
+# GraphQL support
+strawberry-graphql = { extras = ["fastapi"], version = "^0.275.0" }
+
+# Database drivers and ORM
+snowflake-connector-python = { extras = ["pandas"], version = "^3.15.0" }
+duckdb = "^1.3.0"  # In-process SQL OLAP database
+sqlalchemy = { extras = ["asyncio"], version = "^1.4.0" }  # SQL toolkit with async support
+
+# LLM and AI integration
+langchain = "^0.2.0"  # LLM application framework compatible with pydantic 1.x
+langchain-openai = "^0.1.0"  # OpenAI integration for LangChain
+openai = "^1.6.0"  # OpenAI API client
+
+# Authentication and security
+pydantic = "^1.10.0"  # Data validation using Python type hints
+python-multipart = "^0.0.7"  # Multipart form data parsing
+python-jose = { extras = ["cryptography"], version = "^3.3.0" }  # JWT handling
+passlib = { extras = ["bcrypt"], version = "^1.7.0" }  # Password hashing
+python-dotenv = "^1.0.0"  # Environment variable loading
+httpx = "^0.28.0"  # Async HTTP client
+
+# Monitoring and logging
+prometheus-client = "^0.19.0"  # Prometheus metrics client
+structlog = "^23.2.0"  # Structured logging
+
+# Streamlit visualization dependencies - migrated from viz/streamlit/requirements.txt
+[tool.poetry.group.viz.dependencies]
+# Data visualization and dashboard framework
+streamlit = "^1.46.0"  # Interactive web apps for data science
+pandas = "^2.3.0"  # Data manipulation and analysis
+plotly = "^6.2.0"  # Interactive plotting library
+# Database connections (shared with server group but needed for viz)
+psycopg2-binary = "^2.9.0"  # PostgreSQL adapter
+
 [tool.poetry.group.dagster.dependencies]
-dagster = "^1.8.0"
-dagster-webserver = "^1.8.0"
-dagster-datahub = "^0.24.0"
-dagster-docker = "^0.24.0"
+# Dagster orchestration platform - pinned for stability
+dagster = "1.8.13"
+dagster-webserver = "1.8.13"
+dagster-datahub = "0.24.13"
+dagster-docker = "0.24.13"
 requests = "^2.31.0"
 
 [build-system]

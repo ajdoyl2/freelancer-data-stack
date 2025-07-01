@@ -94,8 +94,49 @@ This stack provides a complete modern data platform suitable for:
 ## Prerequisites
 
 - Docker and Docker Compose
+- Python 3.11+ and Poetry (for local development)
 - At least 8GB RAM recommended
 - 20GB+ disk space for volumes
+
+## Dependency Management
+
+This project uses Poetry for Python dependency management with organized dependency groups. Install subsets of dependencies based on your needs:
+
+### Available Dependency Groups
+
+- **Core dependencies**: `poetry install` (dbt-core, dbt-duckdb)
+- **Development tools**: `poetry install --with dev` (ruff, black, isort, sqlfluff, pre-commit)
+- **Server/API**: `poetry install --with server` (FastAPI, uvicorn, database drivers, LLM tools)
+- **Visualization**: `poetry install --with viz` (Streamlit, pandas, plotly)
+- **Orchestration**: `poetry install --with dagster` (Dagster, dagster-webserver)
+- **Data Catalog**: `poetry install --with datahub` (acryl-datahub)
+- **Workflow Management**: `poetry install --with airflow` (apache-airflow)
+- **Jupyter**: `poetry install --with jupyter` (jupyter, jupyterlab)
+
+### Example Installation Commands
+
+```bash
+# Install core dependencies only
+poetry install
+
+# Install for local development
+poetry install --with dev
+
+# Install for data pipeline development
+poetry install --with dev,dagster,airflow
+
+# Install for visualization and analysis
+poetry install --with dev,viz,jupyter
+
+# Install everything for full stack development
+poetry install --with dev,server,viz,dagster,airflow,datahub,jupyter
+```
+
+### Managing Dependencies
+
+- Add new dependencies: `poetry add package-name --group=group-name`
+- Update lockfile: `poetry lock`
+- Export requirements: `poetry export -f requirements.txt --output requirements.txt`
 
 ## Directory Structure
 
