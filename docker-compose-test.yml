@@ -1,0 +1,65 @@
+version: '3.8'
+
+networks:
+  data-stack:
+    driver: bridge
+
+services:
+  # PostgreSQL Database (using Docker volume)
+  postgres:
+    image: postgres:15
+    container_name: test-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: data_stack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: test-redis
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Metabase (lightweight visualization tool)
+  metabase:
+    image: metabase/metabase:latest
+    container_name: test-metabase
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: data_stack
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: postgres
+      MB_DB_HOST: postgres
+    ports:
+      - "3000:3000"
+    networks:
+      - data-stack
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

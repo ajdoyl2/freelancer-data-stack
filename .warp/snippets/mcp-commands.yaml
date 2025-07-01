@@ -1,0 +1,73 @@
+snippets:
+  - name: mcp-inspect-database
+    description: "Inspect database schema and tables"
+    command: |
+      # MCP Database Inspection
+      # Connect to postgres and inspect schema
+      docker exec -it data-stack-postgres psql -U postgres -d data_stack -c "\\dt"
+      docker exec -it data-stack-postgres psql -U postgres -d data_stack -c "\\d+ table_name"
+    
+  - name: mcp-query-data-lineage
+    description: "Query data lineage in DataHub"
+    command: |
+      # MCP Data Lineage Query
+      # Use DataHub CLI to query lineage
+      curl -X GET "http://localhost:9002/api/v2/lineage/dataset/urn:li:dataset:(urn:li:dataPlatform:postgres,public.table_name,PROD)"
+    
+  - name: mcp-validate-dbt-models
+    description: "Validate dbt models and tests"
+    command: |
+      # MCP dbt Validation
+      dbt compile --profiles-dir ./profiles
+      dbt test --profiles-dir ./profiles
+      dbt docs generate --profiles-dir ./profiles
+    
+  - name: mcp-monitor-airflow-dags
+    description: "Monitor Airflow DAG status"
+    command: |
+      # MCP Airflow Monitoring
+      docker exec airflow-webserver airflow dags list
+      docker exec airflow-webserver airflow dags state dag_id execution_date
+      docker exec airflow-webserver airflow tasks list dag_id
+    
+  - name: mcp-check-data-quality
+    description: "Run data quality checks with Great Expectations"
+    command: |
+      # MCP Data Quality Checks
+      docker exec data-stack-great-expectations great_expectations checkpoint run checkpoint_name
+      docker exec data-stack-great-expectations great_expectations suite list
+    
+  - name: mcp-backup-metadata
+    description: "Backup metadata and configurations"
+    command: |
+      # MCP Metadata Backup
+      # Backup Postgres metadata
+      docker exec data-stack-postgres pg_dump -U postgres data_stack > backup_$(date +%Y%m%d).sql
+      
+      # Backup Airbyte configurations
+      docker exec airbyte-server tar -czf /tmp/airbyte_backup_$(date +%Y%m%d).tar.gz /data
+      
+      # Backup dbt profiles and models
+      tar -czf dbt_backup_$(date +%Y%m%d).tar.gz ./dbt_project ./profiles
+    
+  - name: mcp-performance-metrics
+    description: "Collect performance metrics across services"
+    command: |
+      # MCP Performance Metrics
+      # Check container resource usage
+      docker stats --no-stream
+      
+      # Query Prometheus metrics
+      curl -X GET "http://localhost:9090/api/v1/query?query=up"
+      
+      # Check database performance
+      docker exec -it data-stack-postgres psql -U postgres -d data_stack -c "SELECT * FROM pg_stat_activity;"
+    
+  - name: mcp-data-catalog-sync
+    description: "Sync data catalog with DataHub"
+    command: |
+      # MCP Data Catalog Sync
+      # Ingest metadata from various sources
+      docker exec datahub-gms datahub ingest -c postgres_connector.yml
+      docker exec datahub-gms datahub ingest -c dbt_connector.yml
+      docker exec datahub-gms datahub ingest -c airflow_connector.yml

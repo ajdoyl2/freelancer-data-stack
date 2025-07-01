@@ -1,0 +1,8 @@
+name: "Stop Data Stack"
+command: "docker-compose down"
+tags:
+  - docker
+  - data-stack
+  - infrastructure
+description: "Stop the entire data stack"
+arguments: []

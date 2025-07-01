@@ -36,9 +36,11 @@ resource "aws_iam_role" "github_oidc" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Effect = "Allow"
         Principal = {
-          Federated = var.environment == "prod" && length(data.aws_iam_openid_connect_provider.github) > 0 ? 
-                     data.aws_iam_openid_connect_provider.github[0].arn : 
-                     (var.environment == "prod" ? aws_iam_openid_connect_provider.github[0].arn : "")
+          Federated = var.environment == "prod" ? (
+            length(data.aws_iam_openid_connect_provider.github) > 0 ? 
+            data.aws_iam_openid_connect_provider.github[0].arn : 
+            aws_iam_openid_connect_provider.github[0].arn
+          ) : ""
         }
         Condition = {
           StringEquals = {

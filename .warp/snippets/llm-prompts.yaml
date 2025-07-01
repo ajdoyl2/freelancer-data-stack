@@ -1,0 +1,67 @@
+snippets:
+  - name: analyze-data-quality
+    description: "Analyze data quality issues in the pipeline"
+    command: |
+      # Analyze data quality issues
+      # Use this prompt with your AI assistant:
+      
+      "Analyze the data quality issues in our pipeline. Look at:
+      1. Data completeness and missing values
+      2. Data consistency across sources
+      3. Outliers and anomalies
+      4. Schema drift or changes
+      5. Recommend data quality checks and monitoring
+      
+      Current pipeline includes: Airbyte → Postgres/Snowflake → dbt → Visualization"
+    
+  - name: optimize-dbt-models
+    description: "Optimize dbt models for better performance"
+    command: |
+      # Optimize dbt models
+      # Use this prompt with your AI assistant:
+      
+      "Help me optimize these dbt models for better performance:
+      1. Review model dependencies and suggest optimizations
+      2. Identify potential materialization improvements
+      3. Suggest indexing strategies
+      4. Recommend incremental model patterns
+      5. Identify opportunities for model partitioning
+      
+      Please analyze the models in the dbt_project directory."
+    
+  - name: debug-pipeline-failure
+    description: "Debug pipeline failure with logs"
+    command: |
+      # Debug pipeline failure
+      # Use this prompt with your AI assistant:
+      
+      "Help me debug this pipeline failure:
+      1. Error logs: [paste error logs here]
+      2. Pipeline component: [Airbyte/Airflow/dbt/Dagster]
+      3. Expected behavior: [describe expected behavior]
+      4. Recent changes: [list recent changes]
+      
+      Please provide:
+      - Root cause analysis
+      - Step-by-step debugging approach
+      - Prevention strategies"
+    
+  - name: design-data-architecture
+    description: "Design data architecture patterns"
+    command: |
+      # Design data architecture
+      # Use this prompt with your AI assistant:
+      
+      "Help me design a data architecture for:
+      1. Data sources: [list your data sources]
+      2. Use cases: [analytics/ML/reporting/real-time]
+      3. Scale requirements: [volume, velocity, variety]
+      4. Compliance needs: [GDPR, SOC2, etc.]
+      
+      Current stack: Airbyte, Postgres, Snowflake, dbt, DataHub, Metabase
+      
+      Please recommend:
+      - Data modeling patterns
+      - Storage strategies
+      - Processing workflows
+      - Monitoring and governance"

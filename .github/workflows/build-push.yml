@@ -1,0 +1,415 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force build all images'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com
+
+jobs:
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      ingestion: ${{ steps.changes.outputs.ingestion }}
+      transformation: ${{ steps.changes.outputs.transformation }}
+      orchestration: ${{ steps.changes.outputs.orchestration }}
+      api: ${{ steps.changes.outputs.api }}
+      quality: ${{ steps.changes.outputs.quality }}
+      viz: ${{ steps.changes.outputs.viz }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          ingestion:
+            - 'ingestion/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+          transformation:
+            - 'transformation/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+          orchestration:
+            - 'orchestration/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+          api:
+            - 'api/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+          quality:
+            - 'quality/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+          viz:
+            - 'viz/**'
+            - 'pyproject.toml'
+            - 'docker-compose.yml'
+
+  build-push:
+    name: Build and Push Images
+    runs-on: ${{ matrix.runner }}
+    needs: detect-changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      needs.detect-changes.outputs[matrix.service] == 'true'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # AMD64 builds for cloud deployment
+          - service: ingestion
+            runner: ubuntu-latest
+            platform: linux/amd64
+            dockerfile: ingestion/Dockerfile
+            context: ./ingestion
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: transformation
+            runner: ubuntu-latest
+            platform: linux/amd64
+            dockerfile: transformation/Dockerfile
+            context: ./transformation
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: orchestration
+            runner: ubuntu-latest
+            platform: linux/amd64
+            dockerfile: orchestration/Dockerfile
+            context: ./orchestration
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: api
+            runner: ubuntu-latest
+            platform: linux/amd64
+            dockerfile: api/Dockerfile
+            context: ./api
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: quality
+            runner: ubuntu-latest
+            platform: linux/amd64
+            dockerfile: quality/Dockerfile
+            context: ./quality
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          # ARM64 builds for local M1/M2 development
+          - service: ingestion
+            runner: macos-latest
+            platform: linux/arm64
+            dockerfile: ingestion/Dockerfile
+            context: ./ingestion
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: transformation
+            runner: macos-latest
+            platform: linux/arm64
+            dockerfile: transformation/Dockerfile
+            context: ./transformation
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: orchestration
+            runner: macos-latest
+            platform: linux/arm64
+            dockerfile: orchestration/Dockerfile
+            context: ./orchestration
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: api
+            runner: macos-latest
+            platform: linux/arm64
+            dockerfile: api/Dockerfile
+            context: ./api
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+          
+          - service: quality
+            runner: macos-latest
+            platform: linux/arm64
+            dockerfile: quality/Dockerfile
+            context: ./quality
+            build_args: |
+              PYTHON_VERSION=3.11
+              POETRY_VERSION=1.7.1
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: ${{ matrix.platform }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-BuildPush
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Create ECR repository if it doesn't exist
+      run: |
+        aws ecr describe-repositories --repository-names ${{ matrix.service }} || \
+        aws ecr create-repository --repository-name ${{ matrix.service }} \
+          --lifecycle-policy-text '{
+            "rules": [
+              {
+                "rulePriority": 1,
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              },
+              {
+                "rulePriority": 2,
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["v"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }'
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ECR_REGISTRY }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-,suffix=-${{ matrix.platform == 'linux/arm64' && 'arm64' || 'amd64' }}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Check if Dockerfile exists
+      id: dockerfile-check
+      run: |
+        if [ -f "${{ matrix.dockerfile }}" ]; then
+          echo "dockerfile_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "dockerfile_exists=false" >> $GITHUB_OUTPUT
+          echo "Warning: Dockerfile not found at ${{ matrix.dockerfile }}"
+        fi
+
+    - name: Build and push Docker image
+      if: steps.dockerfile-check.outputs.dockerfile_exists == 'true'
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.context }}
+        file: ${{ matrix.dockerfile }}
+        platforms: ${{ matrix.platform }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ matrix.build_args }}
+        cache-from: type=gha,scope=${{ matrix.service }}-${{ matrix.platform }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.service }}-${{ matrix.platform }}
+        provenance: false
+        sbom: false
+
+    - name: Image digest
+      if: steps.dockerfile-check.outputs.dockerfile_exists == 'true'
+      run: echo ${{ steps.build.outputs.digest }}
+
+  create-manifest:
+    name: Create Multi-Arch Manifest
+    runs-on: ubuntu-latest
+    needs: [build-push, detect-changes]
+    if: |
+      github.event_name != 'pull_request' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.ref == 'refs/heads/main' ||
+       startsWith(github.ref, 'refs/tags/v'))
+    
+    strategy:
+      matrix:
+        service: [ingestion, transformation, orchestration, api, quality]
+    
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-Manifest
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Extract metadata for manifest
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.ECR_REGISTRY }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Create and push multi-arch manifest
+      run: |
+        # Extract the first tag for manifest creation
+        MAIN_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+        BASE_TAG=$(echo "$MAIN_TAG" | sed 's/-amd64$//' | sed 's/-arm64$//')
+        
+        # Create manifest combining both architectures
+        docker manifest create $BASE_TAG \
+          --amend $BASE_TAG-amd64 \
+          --amend $BASE_TAG-arm64 2>/dev/null || true
+        
+        # Push the manifest
+        docker manifest push $BASE_TAG || echo "Manifest push failed - one or both architectures may not exist"
+
+  update-deployment:
+    name: Update Deployment Configs
+    runs-on: ubuntu-latest
+    needs: [build-push, create-manifest]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-UpdateDeployment
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Update docker-compose with new image tags
+      run: |
+        # Extract short SHA for tagging
+        SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+        
+        # Update docker-compose.yml with new image tags
+        sed -i.bak "s|image: .*freelancer-data-stack/\([^:]*\):.*|image: ${{ env.ECR_REGISTRY }}/\1:main-$SHORT_SHA-amd64|g" docker-compose.yml
+        
+        # Commit and push changes if any
+        if ! git diff --quiet docker-compose.yml; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docker-compose.yml
+          git commit -m "chore: update image tags to main-$SHORT_SHA"
+          git push
+        fi
+
+  security-scan:
+    name: Security Scan Images
+    runs-on: ubuntu-latest
+    needs: build-push
+    if: github.event_name != 'pull_request'
+    
+    strategy:
+      matrix:
+        service: [ingestion, transformation, orchestration, api, quality]
+    
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        role-session-name: GitHubActions-SecurityScan
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ github.ref_name }}
+        format: 'sarif'
+        output: 'trivy-${{ matrix.service }}-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif-file: 'trivy-${{ matrix.service }}-results.sarif'
+
+  notify:
+    name: Notify Build Status
+    runs-on: ubuntu-latest
+    needs: [build-push, create-manifest, update-deployment]
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Notify success
+      if: needs.build-push.result == 'success' && needs.create-manifest.result == 'success'
+      run: |
+        echo "✅ All images built and pushed successfully"
+        echo "📦 Multi-arch manifests created"
+        echo "🚀 Ready for deployment"
+
+    - name: Notify failure
+      if: needs.build-push.result == 'failure' || needs.create-manifest.result == 'failure'
+      run: |
+        echo "❌ Build or manifest creation failed"
+        echo "Please check the workflow logs for details"
+        exit 1

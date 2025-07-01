@@ -1,0 +1,14 @@
+name: "DBT Comprehensive Workflow"
+command: "dbt $operation --select $model_selection --profiles-dir ./profiles"
+tags:
+  - dbt
+  - data-transformation
+  - modeling
+description: "Comprehensive dbt workflow with operation and model selection"
+arguments:
+  - name: operation
+    description: "DBT operation (run, test, compile, docs generate, seed, etc.)"
+    default_value: "run"
+  - name: model_selection
+    description: "Model selection syntax (model+, +model, tag:staging, etc.)"
+    default_value: "model+"

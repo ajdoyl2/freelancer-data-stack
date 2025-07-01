@@ -1,0 +1,1 @@
+9999999999{"name": "python-nvd3", "version": "0.16.0", "summary": "Python NVD3 - Chart Library for d3.js", "requires_dist": ["python-slugify>=1.2.5", "Jinja2>=2.8"], "requires_python": null, "files": [{"file": "python-nvd3-0.16.0.tar.gz", "hash": "sha256:0115887289b3f751716ddd05c7b53ac5f05e71201e52496decdac453a50dcf7e"}], "yanked": false, "_cache_version": "2.0.0"}

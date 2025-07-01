@@ -1,0 +1,11 @@
+name: "Airflow CLI"
+command: "docker-compose exec airflow-webserver airflow {{airflow_command}}"
+tags:
+  - airflow
+  - cli
+  - data-pipeline
+description: "Execute Airflow CLI commands"
+arguments:
+  - name: "airflow_command"
+    description: "Airflow command to execute (e.g., 'dags list', 'tasks list my_dag', 'dags trigger my_dag')"
+    default_value: "dags list"

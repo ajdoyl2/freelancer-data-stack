@@ -1,0 +1,84 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Postgres monitoring
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # Airflow monitoring
+  - job_name: 'airflow'
+    static_configs:
+      - targets: ['airflow-webserver:8080']
+    metrics_path: /admin/metrics
+    scrape_interval: 30s
+
+  # Dagster monitoring
+  - job_name: 'dagster'
+    static_configs:
+      - targets: ['dagster-daemon:3000']
+    metrics_path: /dagster-webserver/metrics
+    scrape_interval: 30s
+
+  # DataHub monitoring
+  - job_name: 'datahub-gms'
+    static_configs:
+      - targets: ['datahub-gms:8080']
+    metrics_path: /health
+    scrape_interval: 30s
+
+  # Kafka monitoring
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+    scrape_interval: 30s
+
+  # Elasticsearch monitoring
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+    metrics_path: /_prometheus/metrics
+    scrape_interval: 30s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Docker metrics
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['docker-exporter:9417']
+    scrape_interval: 30s
+
+  # Custom application metrics
+  - job_name: 'custom-metrics'
+    file_sd_configs:
+      - files:
+        - '/etc/prometheus/targets/*.yml'
+    scrape_interval: 15s

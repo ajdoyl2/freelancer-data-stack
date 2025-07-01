@@ -1,0 +1,14 @@
+name: "Database Query"
+command: "docker-compose exec postgres psql -U postgres -d {{database}} -c \"{{sql_query}}\""
+tags:
+  - postgres
+  - database
+  - query
+description: "Execute SQL queries against PostgreSQL database"
+arguments:
+  - name: "database"
+    description: "Database name to connect to"
+    default_value: "postgres"
+  - name: "sql_query"
+    description: "SQL query to execute"
+    default_value: "SELECT version();"

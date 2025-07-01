@@ -1,0 +1,8 @@
+name: "Start Data Stack"
+command: "docker-compose up -d"
+tags:
+  - docker
+  - data-stack
+  - infrastructure
+description: "Start the entire data stack using Docker Compose"
+arguments: []

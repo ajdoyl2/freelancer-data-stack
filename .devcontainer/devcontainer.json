@@ -1,0 +1,56 @@
+{
+    "name": "Freelancer Data Stack",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "dockerComposeFile": "../docker-compose.yml",
+    "runServices": ["postgres", "redis"],
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "innoverio.vscode-dbt-power-user",
+                "sqlfluff.vscode-sqlfluff",
+                "hashicorp.terraform",
+                "ms-azuretools.vscode-docker",
+                "github.copilot",
+                "ms-vscode.vscode-json",
+                "redhat.vscode-yaml",
+                "ms-python.black-formatter",
+                "ms-python.isort",
+                "ms-python.pylint"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.provider": "black",
+                "sqlfluff.dialect": "postgres",
+                "files.associations": {
+                    "*.sql": "sql",
+                    "*.yml": "yaml",
+                    "*.yaml": "yaml"
+                }
+            }
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "18"
+        },
+        "ghcr.io/devcontainers/features/terraform:1": {}
+    },
+    "forwardPorts": [
+        5432,
+        8000,
+        8001,
+        8080,
+        9002,
+        3000,
+        3001,
+        3002
+    ],
+    "postCreateCommand": "pip install --user dbt-core dbt-postgres dbt-snowflake sqlfluff dagster dagster-webserver great-expectations pandas numpy jupyter streamlit",
+    "remoteUser": "vscode"
+}
+

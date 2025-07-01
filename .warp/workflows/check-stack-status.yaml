@@ -1,0 +1,8 @@
+name: "Check Data Stack Status"
+command: "docker-compose ps && echo '\n--- Service Health ---' && docker-compose exec postgres pg_isready -U postgres && docker-compose exec redis redis-cli ping"
+tags:
+  - docker
+  - monitoring
+  - health-check
+description: "Check the status and health of all data stack services"
+arguments: []
