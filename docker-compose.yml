@@ -5,7 +5,7 @@ networks:
     driver: bridge
 
 services:
-  # Postgres - Used by Airbyte and Metabase for metadata
+  # Postgres - Used by Airflow and Metabase for metadata
   postgres:
     image: postgres:15
     container_name: data-stack-postgres
@@ -13,9 +13,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: data_stack
-      POSTGRES_MULTIPLE_DATABASES: airbyte,metabase
+      POSTGRES_MULTIPLE_DATABASES: airflow,metabase,meltano
     volumes:
-      - ${HOME}/data-stack/volumes/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     ports:
       - "5432:5432"
@@ -27,104 +27,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # Airbyte - Data integration platform
-  airbyte-bootloader:
-    image: airbyte/bootloader:0.50.33
-    container_name: airbyte-bootloader
+  # Meltano - Data integration platform
+  meltano:
+    image: meltano/meltano:v3.7.9
+    container_name: data-stack-meltano
+    working_dir: /app
     environment:
-      - AIRBYTE_VERSION=0.50.33
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DATABASE_USER=postgres
-      - DATABASE_DB=airbyte
+      - MELTANO_DATABASE_URI=sqlite:////app/.meltano/meltano.db
+      - MELTANO_PROJECT_ROOT=/app
+    volumes:
+      - ./meltano:/app
+      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
       postgres:
         condition: service_healthy
-
-  airbyte-db:
-    image: airbyte/db:0.50.33
-    container_name: airbyte-db
-    restart: unless-stopped
-    environment:
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DATABASE_USER=postgres
-      - DATABASE_DB=airbyte
-    networks:
-      - data-stack
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  airbyte-worker:
-    image: airbyte/worker:0.50.33
-    container_name: airbyte-worker
-    restart: unless-stopped
-    environment:
-      - AIRBYTE_VERSION=0.50.33
-      - AUTO_DETECT_SCHEMA=true
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DATABASE_USER=postgres
-      - DATABASE_DB=airbyte
-      - WORKSPACE_ROOT=/tmp/workspace
-      - WORKSPACE_DOCKER_MOUNT=airbyte_workspace
-      - LOCAL_ROOT=/tmp/airbyte_local
-      - LOCAL_DOCKER_MOUNT=/tmp/airbyte_local
-      - CONFIG_ROOT=/data
-      - TRACKING_STRATEGY=logging
-    volumes:
-      - ${HOME}/data-stack/volumes/airbyte/workspace:/tmp/workspace
-      - ${HOME}/data-stack/volumes/airbyte/local:/tmp/airbyte_local
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - data-stack
-    depends_on:
-      - airbyte-bootloader
-
-  airbyte-server:
-    image: airbyte/server:0.50.33
-    container_name: airbyte-server
-    restart: unless-stopped
-    environment:
-      - AIRBYTE_VERSION=0.50.33
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DATABASE_USER=postgres
-      - DATABASE_DB=airbyte
-      - WORKSPACE_ROOT=/tmp/workspace
-      - CONFIG_ROOT=/data
-      - TRACKING_STRATEGY=logging
-    ports:
-      - "8000:8001"
-    volumes:
-      - ${HOME}/data-stack/volumes/airbyte/workspace:/tmp/workspace
-      - ${HOME}/data-stack/volumes/airbyte/data:/data
-    networks:
-      - data-stack
-    depends_on:
-      - airbyte-bootloader
-
-  airbyte-webapp:
-    image: airbyte/webapp:0.50.33
-    container_name: airbyte-webapp
-    restart: unless-stopped
-    ports:
-      - "8001:80"
-    environment:
-      - AIRBYTE_ROLE=webapp
-      - AIRBYTE_VERSION=0.50.33
-      - API_URL=/api/v1/
-    networks:
-      - data-stack
-    depends_on:
-      - airbyte-server
+    entrypoint: ["/bin/bash"]
+    command: ["-c", "while true; do sleep 30; done"]  # Keep container running
 
   # Redis - Required for Airflow Celery executor
   redis:
@@ -144,7 +64,7 @@ services:
 
   # Apache Airflow 3.0 - Data orchestration
   airflow-init:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.0.2-python3.11
     container_name: airflow-init
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
@@ -165,6 +85,8 @@ services:
       - ${HOME}/data-stack/volumes/airflow/logs:/opt/airflow/logs
       - ${HOME}/data-stack/volumes/airflow/config:/opt/airflow/config
       - ${HOME}/data-stack/volumes/airflow/plugins:/opt/airflow/plugins
+      - ./meltano:/app/meltano
+      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
@@ -174,7 +96,7 @@ services:
         condition: service_healthy
 
   airflow-webserver:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.0.2-python3.11
     container_name: airflow-webserver
     command: webserver
     environment:
@@ -205,7 +127,7 @@ services:
       retries: 5
 
   airflow-scheduler:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.0.2-python3.11
     container_name: airflow-scheduler
     command: scheduler
     environment:
@@ -234,7 +156,7 @@ services:
       retries: 5
 
   airflow-worker:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.0.2-python3.11
     container_name: airflow-worker
     command: celery worker
     environment:
@@ -263,7 +185,7 @@ services:
       retries: 5
 
   airflow-flower:
-    image: apache/airflow:2.8.1-python3.11
+    image: apache/airflow:3.0.2-python3.11
     container_name: airflow-flower
     command: celery flower
     environment:
@@ -609,151 +531,6 @@ services:
     networks:
       - data-stack
 
-  # Dagster - Data orchestration platform
-  dagster-postgres:
-    image: postgres:15
-    container_name: dagster-postgres
-    environment:
-      POSTGRES_USER: dagster
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: dagster
-    volumes:
-      - dagster_postgres_data:/var/lib/postgresql/data
-    networks:
-      - data-stack
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dagster"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  dagster-daemon:
-    image: dagster/dagster-k8s:latest
-    container_name: dagster-daemon
-    entrypoint:
-      - dagster-daemon
-      - run
-    environment:
-      DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DAGSTER_POSTGRES_HOST: dagster-postgres
-      DAGSTER_POSTGRES_DB: dagster
-      DAGSTER_CURRENT_IMAGE: dagster/dagster-k8s:latest
-    volumes:
-      - ${HOME}/data-stack/volumes/dagster/dagster_home:/opt/dagster/dagster_home
-      - ./orchestration/dagster:/opt/dagster/app
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
-      - ./transformation/dbt:/opt/dagster/dbt
-    networks:
-      - data-stack
-    depends_on:
-      dagster-postgres:
-        condition: service_healthy
-    restart: on-failure
-
-  dagster-webserver:
-    image: dagster/dagster-k8s:latest
-    container_name: dagster-webserver
-    entrypoint:
-      - dagster-webserver
-      - -h
-      - "0.0.0.0"
-      - -p
-      - "3000"
-      - -w
-      - workspace.yaml
-    environment:
-      DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DAGSTER_POSTGRES_HOST: dagster-postgres
-      DAGSTER_POSTGRES_DB: dagster
-      DAGSTER_CURRENT_IMAGE: dagster/dagster-k8s:latest
-      # Data source connections
-      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
-      SNOWFLAKE_USER: ${SNOWFLAKE_USERNAME}
-      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
-      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
-      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
-      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
-      DUCKDB_PATH: /data/duckdb/main.db
-      # Integration endpoints
-      DATAHUB_SERVER: http://datahub-gms:8080
-      DATAHUB_TOKEN: ${DATAHUB_TOKEN}
-      AIRBYTE_HOST: airbyte-server
-      AIRBYTE_PORT: 8001
-    volumes:
-      - ${HOME}/data-stack/volumes/dagster/dagster_home:/opt/dagster/dagster_home
-      - ./orchestration/dagster:/opt/dagster/app
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
-      - ./transformation/dbt:/opt/dagster/dbt
-    ports:
-      - "3003:3000"
-    networks:
-      - data-stack
-    depends_on:
-      dagster-postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    restart: on-failure
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dagster.rule=Host(`dagster.localhost`)"
-      - "traefik.http.services.dagster.loadbalancer.server.port=3000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  dagster-code-server:
-    image: dagster/dagster-k8s:latest
-    container_name: dagster-code-server
-    entrypoint:
-      - dagster
-      - api
-      - grpc
-      - -h
-      - "0.0.0.0"
-      - -p
-      - "4000"
-      - -f
-      - /opt/dagster/app/definitions.py
-    environment:
-      DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DAGSTER_POSTGRES_HOST: dagster-postgres
-      DAGSTER_POSTGRES_DB: dagster
-      DAGSTER_CURRENT_IMAGE: dagster/dagster-k8s:latest
-      # Data source connections
-      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
-      SNOWFLAKE_USER: ${SNOWFLAKE_USERNAME}
-      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
-      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
-      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
-      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
-      DUCKDB_PATH: /data/duckdb/main.db
-      # Integration endpoints
-      DATAHUB_SERVER: http://datahub-gms:8080
-      DATAHUB_TOKEN: ${DATAHUB_TOKEN}
-      AIRBYTE_HOST: airbyte-server
-      AIRBYTE_PORT: 8001
-    volumes:
-      - ${HOME}/data-stack/volumes/dagster/dagster_home:/opt/dagster/dagster_home
-      - ./orchestration/dagster:/opt/dagster/app
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
-      - ./transformation/dbt:/opt/dagster/dbt
-    ports:
-      - "4000:4000"
-    networks:
-      - data-stack
-    depends_on:
-      dagster-postgres:
-        condition: service_healthy
-    restart: on-failure
 
   # MCP Server - Model Context Protocol for AI/LLM integration
   mcp-server:
@@ -771,8 +548,8 @@ services:
       - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
       - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
       - DUCKDB_PATH=/data/duckdb/main.db
-      - DAGSTER_HOST=dagster-webserver
-      - DAGSTER_PORT=3000
+      - AIRFLOW_HOST=airflow-webserver
+      - AIRFLOW_PORT=8080
       - DBT_PROJECT_DIR=/app/transform
       - DATAHUB_SERVER=http://datahub-gms:8080
       - DATAHUB_TOKEN=${DATAHUB_TOKEN}
@@ -831,10 +608,6 @@ services:
 
 volumes:
   postgres_data:
-  dagster_postgres_data:
-  airbyte_workspace:
-  airbyte_data:
-  airbyte_local:
   redis_data:
   airflow_dags:
   airflow_logs:

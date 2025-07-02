@@ -8,9 +8,9 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
-# Core data transformation tools
-dbt-core = "^1.8.0"  # dbt version compatible with dagster protobuf requirements
-dbt-duckdb = "^1.8.0"  # DuckDB adapter for dbt
+# Core data transformation tools - Latest compatible versions
+dbt-core = "^1.10.0"  # Latest dbt core version
+dbt-duckdb = "^1.9.4"  # Latest dbt-duckdb adapter
 
 [tool.poetry.group.dev.dependencies]
 # Code quality and formatting tools - updated to latest stable versions
@@ -20,8 +20,9 @@ isort = "^5.13.0"
 sqlfluff = "^3.0.0"
 pre-commit = "^4.0.0"
 
-[tool.poetry.group.airflow.dependencies]
-apache-airflow = "^2.10.0"
+# Note: Airflow temporarily removed due to SQLAlchemy compatibility conflicts with Meltano
+# Meltano provides built-in orchestration capabilities via schedules and environments
+# Can be re-added later when compatibility is resolved
 
 [tool.poetry.group.jupyter.dependencies]
 jupyter = "^1.1.0"
@@ -42,16 +43,16 @@ strawberry-graphql = { extras = ["fastapi"], version = "^0.275.0" }
 
 # Database drivers and ORM
 snowflake-connector-python = { extras = ["pandas"], version = "^3.15.0" }
-duckdb = "^1.3.0"  # In-process SQL OLAP database
-sqlalchemy = { extras = ["asyncio"], version = "^1.4.0" }  # SQL toolkit with async support
+duckdb = "^1.3.1"  # Latest DuckDB version
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.0" }  # SQL toolkit with async support
 
 # LLM and AI integration
-langchain = "^0.2.0"  # LLM application framework compatible with pydantic 1.x
-langchain-openai = "^0.1.0"  # OpenAI integration for LangChain
+langchain = "^0.3.0"  # LLM application framework
+langchain-openai = "^0.2.0"  # OpenAI integration for LangChain
 openai = "^1.6.0"  # OpenAI API client
 
 # Authentication and security
-pydantic = "^1.10.0"  # Data validation using Python type hints
+pydantic = "^2.0.0"  # Data validation using Python type hints
 python-multipart = "^0.0.7"  # Multipart form data parsing
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }  # JWT handling
 passlib = { extras = ["bcrypt"], version = "^1.7.0" }  # Password hashing
@@ -60,7 +61,7 @@ httpx = "^0.28.0"  # Async HTTP client
 
 # Monitoring and logging
 prometheus-client = "^0.19.0"  # Prometheus metrics client
-structlog = "^23.2.0"  # Structured logging
+structlog = "^25.1.0"  # Structured logging (compatible with latest Meltano)
 
 # Streamlit visualization dependencies - migrated from viz/streamlit/requirements.txt
 [tool.poetry.group.viz.dependencies]
@@ -71,13 +72,11 @@ plotly = "^6.2.0"  # Interactive plotting library
 # Database connections (shared with server group but needed for viz)
 psycopg2-binary = "^2.9.0"  # PostgreSQL adapter
 
-[tool.poetry.group.dagster.dependencies]
-# Dagster orchestration platform - pinned for stability
-dagster = "1.8.13"
-dagster-webserver = "1.8.13"
-dagster-datahub = "0.24.13"
-dagster-docker = "0.24.13"
-requests = "^2.31.0"
+[tool.poetry.group.meltano.dependencies]
+# Meltano ELT platform - Latest version with built-in orchestration
+meltano = "^3.7.9"  # Latest Meltano version
+singer-sdk = "^0.40.0"  # Latest Singer SDK
+
 
 [build-system]
 requires = ["poetry-core"]

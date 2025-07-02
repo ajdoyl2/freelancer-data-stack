@@ -2,6 +2,9 @@ name: 'freelancer_analytics'
 version: '1.0.0'
 config-version: 2
 
+# Require dbt 1.10.0 or higher
+require-dbt-version: ">=1.10.0"
+
 # This setting configures which "profile" dbt uses for this project.
 profile: 'freelancer_analytics'
 
@@ -44,7 +47,7 @@ snapshots:
 vars:
   # dbt_expectations configurations
   dbt_expectations_warn_if_not_tested: false
-  
+
   # Environment-specific vars
   start_date: '2023-01-01'
   end_date: '2024-12-31'
@@ -56,6 +59,6 @@ on-run-end:
 # Post-hooks for dbt_artifacts (disabled for DuckDB compatibility)
 # on-run-start:
 #   - "{{ dbt_artifacts.upload_results() }}"
-#   
+#
 # on-run-end:
 #   - "{{ dbt_artifacts.upload_results() }}"

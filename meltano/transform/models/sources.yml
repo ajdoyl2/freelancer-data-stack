@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data loaded from extractors"
+    tables:
+      - name: sample_data
+        description: "Sample customer data from CSV"
+        columns:
+          - name: id
+            description: "Unique customer identifier"
+            tests:
+              - unique
+              - not_null
+          - name: name
+            description: "Customer name"
+            tests:
+              - not_null
+          - name: email
+            description: "Customer email address"
+            tests:
+              - unique
+              - not_null
+          - name: created_at
+            description: "Customer signup date"
+          - name: revenue
+            description: "Customer revenue"
+            tests:
+              - not_null

@@ -88,8 +88,6 @@ dbt_packages/
 target/
 profiles.yml
 
-# Airbyte
-airbyte_local/
 
 # Great Expectations
 .great_expectations/uncommitted/
@@ -104,5 +102,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Dagster
-dagster_home/
+# Meltano
+.meltano/
+run.log
+
+# Airflow
+airflow/logs/
+airflow/dags/__pycache__/
+airflow.cfg
