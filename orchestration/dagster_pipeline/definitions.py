@@ -6,56 +6,58 @@ into a complete Dagster deployment with DataHub integration.
 """
 
 import os
-from dagster import (
-    Definitions,
-    EnvVar,
-    load_assets_from_modules,
-    ConfigurableResource,
-    InitResourceContext,
-)
-# from dagster_datahub import DataHubResource
 
+from dagster import (
+    ConfigurableResource,
+    Definitions,
+    InitResourceContext,
+    load_assets_from_modules,
+)
+
+# from dagster_datahub import DataHubResource
 from . import assets, jobs, schedules_sensors
 
 
 class FreelancerDataStackResource(ConfigurableResource):
     """
     Custom resource for the freelancer data stack configuration.
-    
+
     Provides centralized configuration management for the entire stack.
     """
-    
+
     # Environment configuration
     environment: str = "dev"
-    
+
     # Airbyte configuration
     airbyte_host: str = "localhost"
     airbyte_port: int = 8000
     airbyte_connection_id: str = "default-connection"
-    
+
     # dlt configuration
     dlt_pipeline_name: str = "freelancer_data"
     dlt_destination: str = "duckdb"
     dlt_dataset_name: str = "freelancer_raw"
-    
+
     # dbt configuration
     dbt_project_dir: str = "/app/transformation/dbt"
     dbt_profiles_dir: str = "/app/transformation/dbt"
     dbt_target: str = "dev"
-    
+
     # Great Expectations configuration
     ge_project_dir: str = "/app/quality/great_expectations"
     ge_checkpoint_name: str = "daily_validation"
-    
+
     # DataHub configuration
     datahub_gms_url: str = "http://localhost:8080"
     datahub_gms_token: str = ""
-    
+
     # GitHub configuration
     github_repo: str = ""
     github_token: str = ""
-    
-    def setup_for_execution(self, context: InitResourceContext) -> "FreelancerDataStackResource":
+
+    def setup_for_execution(
+        self, context: InitResourceContext
+    ) -> "FreelancerDataStackResource":
         """Set up the resource for execution with environment-specific configs."""
         return self
 
@@ -69,30 +71,25 @@ class FreelancerDataStackResource(ConfigurableResource):
 
 # Custom resource for the freelancer data stack
 freelancer_stack_resource = FreelancerDataStackResource(
-    environment=EnvVar("DAGSTER_ENV").default("dev"),
-    
+    environment=os.getenv("DAGSTER_ENV", "dev"),
     # Airbyte configuration
-    airbyte_host=EnvVar("AIRBYTE_HOST").default("localhost"),
-    airbyte_port=EnvVar.int("AIRBYTE_PORT").default(8000),
-    airbyte_connection_id=EnvVar("AIRBYTE_CONNECTION_ID").default("default-connection"),
-    
+    airbyte_host=os.getenv("AIRBYTE_HOST", "localhost"),
+    airbyte_port=int(os.getenv("AIRBYTE_PORT", "8000")),
+    airbyte_connection_id=os.getenv("AIRBYTE_CONNECTION_ID", "default-connection"),
     # dlt configuration
-    dlt_pipeline_name=EnvVar("DLT_PIPELINE_NAME").default("freelancer_data"),
-    dlt_destination=EnvVar("DLT_DESTINATION").default("duckdb"),
-    dlt_dataset_name=EnvVar("DLT_DATASET_NAME").default("freelancer_raw"),
-    
+    dlt_pipeline_name=os.getenv("DLT_PIPELINE_NAME", "freelancer_data"),
+    dlt_destination=os.getenv("DLT_DESTINATION", "duckdb"),
+    dlt_dataset_name=os.getenv("DLT_DATASET_NAME", "freelancer_raw"),
     # dbt configuration
-    dbt_project_dir=EnvVar("DBT_PROJECT_DIR").default("/app/transformation/dbt"),
-    dbt_profiles_dir=EnvVar("DBT_PROFILES_DIR").default("/app/transformation/dbt"),
-    dbt_target=EnvVar("DBT_TARGET").default("dev"),
-    
+    dbt_project_dir=os.getenv("DBT_PROJECT_DIR", "/app/transformation/dbt"),
+    dbt_profiles_dir=os.getenv("DBT_PROFILES_DIR", "/app/transformation/dbt"),
+    dbt_target=os.getenv("DBT_TARGET", "dev"),
     # Great Expectations configuration
-    ge_project_dir=EnvVar("GE_PROJECT_DIR").default("/app/quality/great_expectations"),
-    ge_checkpoint_name=EnvVar("GE_CHECKPOINT_NAME").default("daily_validation"),
-    
+    ge_project_dir=os.getenv("GE_PROJECT_DIR", "/app/quality/great_expectations"),
+    ge_checkpoint_name=os.getenv("GE_CHECKPOINT_NAME", "daily_validation"),
     # GitHub configuration
-    github_repo=EnvVar("GITHUB_REPO").default(""),
-    github_token=EnvVar("GITHUB_TOKEN").default(""),
+    github_repo=os.getenv("GITHUB_REPO", ""),
+    github_token=os.getenv("GITHUB_TOKEN", ""),
 )
 
 

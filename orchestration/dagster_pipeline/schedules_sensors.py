@@ -9,7 +9,6 @@ This module defines:
 
 import json
 import os
-from typing import Optional, Dict
 
 import requests
 from dagster import (
@@ -17,12 +16,17 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SkipReason,
-    build_schedule_context,
+    get_dagster_logger,
     schedule,
     sensor,
-    get_dagster_logger,
 )
-from kafka import KafkaConsumer
+
+try:
+    from kafka import KafkaConsumer
+
+    KAFKA_AVAILABLE = True
+except ImportError:
+    KAFKA_AVAILABLE = False
 
 
 @schedule(
@@ -33,7 +37,7 @@ from kafka import KafkaConsumer
 def daily_pipeline_schedule(context):
     """
     Daily schedule for the complete data pipeline.
-    
+
     Runs at 2 AM UTC to ensure data freshness for business hours.
     Configures the pipeline with default parameters.
     """
@@ -43,14 +47,18 @@ def daily_pipeline_schedule(context):
             "ops": {
                 "airbyte_sync_job": {
                     "config": {
-                        "connection_id": os.getenv("AIRBYTE_CONNECTION_ID", "default-connection"),
+                        "connection_id": os.getenv(
+                            "AIRBYTE_CONNECTION_ID", "default-connection"
+                        ),
                         "airbyte_host": os.getenv("AIRBYTE_HOST", "localhost"),
                         "airbyte_port": int(os.getenv("AIRBYTE_PORT", "8000")),
                     }
                 },
                 "dlt_ingestion_pipeline": {
                     "config": {
-                        "pipeline_name": os.getenv("DLT_PIPELINE_NAME", "freelancer_data"),
+                        "pipeline_name": os.getenv(
+                            "DLT_PIPELINE_NAME", "freelancer_data"
+                        ),
                         "destination": os.getenv("DLT_DESTINATION", "duckdb"),
                         "dataset_name": os.getenv("DLT_DATASET_NAME", "freelancer_raw"),
                     }
@@ -72,7 +80,9 @@ def daily_pipeline_schedule(context):
                 "great_expectations_validation": {
                     "config": {
                         "project_dir": "/app/quality/great_expectations",
-                        "checkpoint_name": os.getenv("GE_CHECKPOINT_NAME", "daily_validation"),
+                        "checkpoint_name": os.getenv(
+                            "GE_CHECKPOINT_NAME", "daily_validation"
+                        ),
                     }
                 },
             }
@@ -93,7 +103,7 @@ def daily_pipeline_schedule(context):
 def incremental_sync_schedule(context):
     """
     Incremental sync schedule for frequently updated data sources.
-    
+
     Runs every 6 hours for near real-time data updates.
     Only runs Airbyte sync and lightweight transformations.
     """
@@ -103,7 +113,10 @@ def incremental_sync_schedule(context):
             "ops": {
                 "airbyte_sync_job": {
                     "config": {
-                        "connection_id": os.getenv("AIRBYTE_INCREMENTAL_CONNECTION_ID", "incremental-connection"),
+                        "connection_id": os.getenv(
+                            "AIRBYTE_INCREMENTAL_CONNECTION_ID",
+                            "incremental-connection",
+                        ),
                         "airbyte_host": os.getenv("AIRBYTE_HOST", "localhost"),
                         "airbyte_port": int(os.getenv("AIRBYTE_PORT", "8000")),
                     }
@@ -128,7 +141,7 @@ def incremental_sync_schedule(context):
 
 @sensor(
     name="kafka_db_trigger_sensor",
-    job_name="dbt_incremental_job",
+    job_name="transformation_pipeline",
     default_status=DefaultSensorStatus.STOPPED,
     description="Consumes Kafka messages to trigger dbt incremental runs",
 )
@@ -137,7 +150,10 @@ def kafka_db_trigger_sensor(context: SensorEvaluationContext):
     Sensor to consume messages from a Kafka topic and trigger dbt incremental.
     """
     logger = get_dagster_logger()
-    
+
+    if not KAFKA_AVAILABLE:
+        return SkipReason("Kafka package not available")
+
     kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     topic_name = os.getenv("KAFKA_TOPIC_NAME", "dbt_incremental")
 
@@ -145,12 +161,12 @@ def kafka_db_trigger_sensor(context: SensorEvaluationContext):
         consumer = KafkaConsumer(
             topic_name,
             bootstrap_servers=kafka_bootstrap_servers,
-            auto_offset_reset='earliest',
+            auto_offset_reset="earliest",
             enable_auto_commit=False,
         )
 
         for message in consumer:
-            message_value: Dict = json.loads(message.value)
+            message_value: dict = json.loads(message.value)
             logger.info(f"Received Kafka message: {message_value}")
 
             # Trigger dbt incremental
@@ -160,7 +176,7 @@ def kafka_db_trigger_sensor(context: SensorEvaluationContext):
                         "config": {
                             "project_dir": "/app/transformation/dbt",
                             "profiles_dir": "/app/transformation/dbt",
-                            "select": message_value.get("model", "*")
+                            "select": message_value.get("model", "*"),
                         }
                     }
                 }
@@ -173,7 +189,7 @@ def kafka_db_trigger_sensor(context: SensorEvaluationContext):
                 tags={
                     "trigger": "kafka_message",
                     "message_offset": message.offset,
-                }
+                },
             )
 
     except Exception as e:
@@ -190,68 +206,68 @@ def kafka_db_trigger_sensor(context: SensorEvaluationContext):
 def github_release_sensor(context: SensorEvaluationContext):
     """
     Sensor that monitors GitHub releases and triggers the pipeline on new releases.
-    
+
     This sensor polls the GitHub API for new releases and triggers a pipeline run
     when a new release is detected. Useful for data pipelines that need to process
     release-related data or update documentation/catalogs.
     """
     logger = get_dagster_logger()
-    
+
     # GitHub repository configuration
     github_repo = os.getenv("GITHUB_REPO", "your-org/your-repo")
     github_token = os.getenv("GITHUB_TOKEN")
-    
+
     if not github_token:
         return SkipReason("GitHub token not configured")
-    
+
     if not github_repo:
         return SkipReason("GitHub repository not configured")
-    
+
     try:
         # Get the latest release from GitHub API
         headers = {
             "Authorization": f"token {github_token}",
             "Accept": "application/vnd.github.v3+json",
         }
-        
+
         url = f"https://api.github.com/repos/{github_repo}/releases/latest"
         response = requests.get(url, headers=headers, timeout=30)
-        
+
         if response.status_code == 404:
             return SkipReason("No releases found for repository")
-        
+
         response.raise_for_status()
         release_data = response.json()
-        
+
         # Extract release information
         release_id = release_data["id"]
         release_tag = release_data["tag_name"]
         release_name = release_data["name"]
-        release_created_at = release_data["created_at"]
-        release_published_at = release_data["published_at"]
-        
         # Check if this release has already been processed
-        cursor_key = f"github_release_sensor_{github_repo.replace('/', '_')}"
         last_processed_release_id = context.cursor or "0"
-        
+
         if str(release_id) == last_processed_release_id:
             return SkipReason(f"Release {release_tag} already processed")
-        
+
         logger.info(f"New GitHub release detected: {release_tag} ({release_name})")
-        
+
         # Trigger pipeline run for the new release
         run_config = {
             "ops": {
                 "airbyte_sync_job": {
                     "config": {
-                        "connection_id": os.getenv("AIRBYTE_CONNECTION_ID", "default-connection"),
+                        "connection_id": os.getenv(
+                            "AIRBYTE_CONNECTION_ID", "default-connection"
+                        ),
                         "airbyte_host": os.getenv("AIRBYTE_HOST", "localhost"),
                         "airbyte_port": int(os.getenv("AIRBYTE_PORT", "8000")),
                     }
                 },
                 "dlt_ingestion_pipeline": {
                     "config": {
-                        "pipeline_name": os.getenv("DLT_PIPELINE_NAME", "freelancer_data"),
+                        "pipeline_name": os.getenv(
+                            "DLT_PIPELINE_NAME", "freelancer_data"
+                        ),
                         "destination": os.getenv("DLT_DESTINATION", "duckdb"),
                         "dataset_name": f"release_{release_tag.replace('.', '_')}",
                     }
@@ -263,12 +279,10 @@ def github_release_sensor(context: SensorEvaluationContext):
                         "target": "release",
                     }
                 },
-                "datahub_metadata_ingestion": {
-                    "config": {}
-                },
+                "datahub_metadata_ingestion": {"config": {}},
             }
         }
-        
+
         return RunRequest(
             run_key=f"github_release_{release_tag}_{release_id}",
             run_config=run_config,
@@ -280,14 +294,15 @@ def github_release_sensor(context: SensorEvaluationContext):
                 "repository": github_repo,
             },
         ).with_replaced_cursor(str(release_id))
-        
+
     except requests.RequestException as e:
         logger.error(f"Failed to fetch GitHub releases: {str(e)}")
         return SkipReason(f"GitHub API request failed: {str(e)})")
-    
+
     except Exception as e:
         logger.error(f"GitHub release sensor error: {str(e)})")
         return SkipReason(f"Sensor error: {str(e)})")
+
 
 @sensor(
     name="data_quality_alert_sensor",
@@ -298,50 +313,52 @@ def github_release_sensor(context: SensorEvaluationContext):
 def data_quality_alert_sensor(context: SensorEvaluationContext):
     """
     Sensor that monitors data quality alerts and triggers remediation actions.
-    
+
     This sensor can be used to monitor data quality metrics and trigger
     remediation pipelines when quality thresholds are breached.
     """
     logger = get_dagster_logger()
-    
+
     # Check for quality alerts from various sources
     # This could monitor:
     # - Great Expectations validation results
     # - Custom data quality metrics
     # - External monitoring systems
-    
+
     try:
         # Example: Check for quality alert files
         alert_dir = "/app/quality/alerts"
         if not os.path.exists(alert_dir):
             return SkipReason("Alert directory does not exist")
-        
-        alert_files = [f for f in os.listdir(alert_dir) if f.endswith('.json')]
-        
+
+        alert_files = [f for f in os.listdir(alert_dir) if f.endswith(".json")]
+
         if not alert_files:
             return SkipReason("No quality alerts found")
-        
+
         # Process the latest alert
-        latest_alert_file = max(alert_files, key=lambda f: os.path.getctime(os.path.join(alert_dir, f)))
+        latest_alert_file = max(
+            alert_files, key=lambda f: os.path.getctime(os.path.join(alert_dir, f))
+        )
         alert_path = os.path.join(alert_dir, latest_alert_file)
-        
+
         # Check if this alert has been processed
         alert_mtime = os.path.getmtime(alert_path)
         last_processed_time = float(context.cursor or "0")
-        
+
         if alert_mtime <= last_processed_time:
             return SkipReason("No new quality alerts")
-        
+
         # Read alert details
-        with open(alert_path, 'r') as f:
+        with open(alert_path) as f:
             alert_data = json.load(f)
-        
+
         alert_type = alert_data.get("type", "unknown")
         alert_severity = alert_data.get("severity", "medium")
         alert_description = alert_data.get("description", "Data quality issue detected")
-        
+
         logger.warning(f"Data quality alert triggered: {alert_description}")
-        
+
         # Configure remediation pipeline based on alert
         run_config = {
             "ops": {
@@ -354,7 +371,7 @@ def data_quality_alert_sensor(context: SensorEvaluationContext):
                 # Could include data repair or re-processing steps
             }
         }
-        
+
         return RunRequest(
             run_key=f"quality_alert_{int(alert_mtime)}_{alert_type}",
             run_config=run_config,
@@ -365,7 +382,7 @@ def data_quality_alert_sensor(context: SensorEvaluationContext):
                 "alert_file": latest_alert_file,
             },
         ).with_replaced_cursor(str(alert_mtime))
-        
+
     except Exception as e:
         logger.error(f"Data quality alert sensor error: {str(e)}")
         return SkipReason(f"Sensor error: {str(e)}")
@@ -380,49 +397,49 @@ def data_quality_alert_sensor(context: SensorEvaluationContext):
 def file_arrival_sensor(context: SensorEvaluationContext):
     """
     Sensor that monitors file system for new data files.
-    
+
     Useful for batch processing scenarios where files are dropped
     into a specific directory for processing.
     """
     logger = get_dagster_logger()
-    
+
     # Directory to monitor for new files
     watch_dir = os.getenv("FILE_WATCH_DIR", "/app/data/incoming")
-    
+
     if not os.path.exists(watch_dir):
         return SkipReason(f"Watch directory does not exist: {watch_dir}")
-    
+
     try:
         # Look for files matching patterns
         import glob
-        
+
         file_patterns = [
             "*.csv",
             "*.json",
             "*.parquet",
         ]
-        
+
         new_files = []
         for pattern in file_patterns:
             pattern_path = os.path.join(watch_dir, pattern)
             new_files.extend(glob.glob(pattern_path))
-        
+
         if not new_files:
             return SkipReason("No new files found")
-        
+
         # Get the most recent file
         latest_file = max(new_files, key=os.path.getctime)
         file_mtime = os.path.getctime(latest_file)
-        
+
         # Check if this file has been processed
         last_processed_time = float(context.cursor or "0")
-        
+
         if file_mtime <= last_processed_time:
             return SkipReason("No new files since last check")
-        
+
         filename = os.path.basename(latest_file)
         logger.info(f"New file detected for processing: {filename}")
-        
+
         # Configure pipeline for file processing
         run_config = {
             "ops": {
@@ -442,7 +459,7 @@ def file_arrival_sensor(context: SensorEvaluationContext):
                 },
             }
         }
-        
+
         return RunRequest(
             run_key=f"file_arrival_{int(file_mtime)}_{filename}",
             run_config=run_config,
@@ -453,7 +470,7 @@ def file_arrival_sensor(context: SensorEvaluationContext):
                 "file_size": str(os.path.getsize(latest_file)),
             },
         ).with_replaced_cursor(str(file_mtime))
-        
+
     except Exception as e:
         logger.error(f"File arrival sensor error: {str(e)}")
         return SkipReason(f"Sensor error: {str(e)}")

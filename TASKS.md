@@ -43,6 +43,13 @@
 - **Warp Integration**: Seamless prompt access via aliases, functions, and snippets (pv, ps, pl, ph commands)
 - **Agent Functions**: Enhanced `.warp/agent_functions.sh` with prompt library integration and workflow automation
 
+### ✅ **Dagster Test Infrastructure Fixes** (Completed)
+- **Import Resolution**: Fixed name collision by renaming local `dagster` directory to `dagster_pipeline`
+- **Dependency Issues**: Made kafka import optional and removed unused datahub imports
+- **Job References**: Fixed sensor job targeting to reference existing pipeline jobs
+- **API Compatibility**: Updated deprecated `EnvVar` usage to use `os.getenv()` instead
+- **Test Infrastructure**: Core Dagster assets and jobs now load successfully (2/9 tests passing)
+
 ## 🚧 Current Outstanding Items
 
 ### 🔧 **Technical Debt & Improvements**
@@ -124,7 +131,7 @@
 ### Sprint Focus: Production Readiness & Data Integration
 
 1. **Complete Airbyte Setup** - Configure real data source connectors
-2. **End-to-End Testing** - Validate full ingest → transform → visualize pipeline  
+2. **End-to-End Testing** - Validate full ingest → transform → visualize pipeline
 3. **Production Data Sources** - Connect to actual client data systems
 4. **Dashboard Development** - Create production Streamlit applications
 5. **Monitoring Setup** - Configure Grafana dashboards and alerts
@@ -154,7 +161,7 @@
 ## 📋 **Action Items for Next Planning Session**
 
 1. **Prioritize real data source connections** based on business value
-2. **Define specific dashboard requirements** with stakeholders  
+2. **Define specific dashboard requirements** with stakeholders
 3. **Plan production infrastructure deployment** strategy
 4. **Schedule comprehensive testing** with production-like data volumes
 5. **Review and update** dependency versions for any security patches
