@@ -7,8 +7,8 @@ A comprehensive Docker Compose stack for modern data engineering and analytics w
 This stack spins up the following services with all volumes mapped to `~/data-stack/volumes/*`:
 
 1. **PostgreSQL** - Shared database for Airbyte, Metabase, and Airflow metadata
-2. **Airbyte** - Data integration platform for ELT pipelines
-3. **Apache Airflow** - Modern data orchestration with Celery executor and Redis
+2. **Meltano** - Modern ELT platform with Singer taps and targets
+3. **Apache Airflow 3.0** - Latest workflow orchestration with Celery executor and Redis
 4. **DataHub + Kafka** - Data catalog and discovery platform with Kafka messaging
 5. **Great Expectations** - Data quality and validation with Jupyter/Streamlit
 6. **Evidence.dev** - Development server for data apps
@@ -35,8 +35,8 @@ This stack spins up the following services with all volumes mapped to `~/data-st
    ```
 
 4. Access the services:
-   - **Airbyte Web UI**: http://localhost:8001
    - **Apache Airflow**: http://localhost:8080 (admin/[your_password])
+   - **Meltano UI**: Available via CLI commands
    - **Airflow Flower (Celery Monitor)**: http://localhost:5555
    - **DataHub**: http://localhost:9002
    - **Great Expectations Jupyter**: http://localhost:8888
@@ -67,7 +67,7 @@ Key environment variables to configure in your `.env` file:
 All persistent data is stored in `~/data-stack/volumes/` with subdirectories for each service:
 
 - `postgres/` - PostgreSQL data
-- `airbyte/` - Airbyte configurations and workspace
+- `meltano/` - Meltano project files and data
 - `airflow/` - Airflow DAGs, logs, config, and plugins
 - `redis/` - Redis data for Airflow Celery
 - `datahub/` - DataHub metadata
@@ -83,8 +83,8 @@ All persistent data is stored in `~/data-stack/volumes/` with subdirectories for
 ## Architecture
 
 This stack provides a complete modern data platform suitable for:
-- Data ingestion and ETL/ELT pipelines
-- Data orchestration with Apache Airflow and Dagster
+- Data ingestion and ELT pipelines with Meltano
+- Data orchestration with Apache Airflow 3.0
 - Data quality validation and monitoring
 - Data cataloging and discovery
 - Business intelligence and analytics
@@ -108,7 +108,7 @@ This project uses Poetry for Python dependency management with organized depende
 - **Development tools**: `poetry install --with dev` (ruff, black, isort, sqlfluff, pre-commit)
 - **Server/API**: `poetry install --with server` (FastAPI, uvicorn, database drivers, LLM tools)
 - **Visualization**: `poetry install --with viz` (Streamlit, pandas, plotly)
-- **Orchestration**: `poetry install --with dagster` (Dagster, dagster-webserver)
+- **ELT Platform**: `poetry install --with meltano` (Meltano, singer-sdk)
 - **Data Catalog**: `poetry install --with datahub` (acryl-datahub)
 - **Workflow Management**: `poetry install --with airflow` (apache-airflow)
 - **Jupyter**: `poetry install --with jupyter` (jupyter, jupyterlab)
@@ -123,13 +123,13 @@ poetry install
 poetry install --with dev
 
 # Install for data pipeline development
-poetry install --with dev,dagster,airflow
+poetry install --with dev,meltano,airflow
 
 # Install for visualization and analysis
 poetry install --with dev,viz,jupyter
 
 # Install everything for full stack development
-poetry install --with dev,server,viz,dagster,airflow,datahub,jupyter
+poetry install --with dev,server,viz,meltano,airflow,datahub,jupyter
 ```
 
 ### Managing Dependencies
@@ -144,7 +144,7 @@ poetry install --with dev,server,viz,dagster,airflow,datahub,jupyter
 infra/terraform       # Infrastructure as Code
 docker/              # Docker configurations
 orchestration/       # Airflow DAGs and workflows
-ingestion/           # Airbyte connectors and DLT configs
+meltano/             # Meltano project for ELT pipelines
 transformation/      # dbt models and transformations
 quality/             # Great Expectations suites
 viz/                 # Evidence, Metabase, Streamlit apps
