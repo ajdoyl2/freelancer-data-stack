@@ -354,6 +354,11 @@ alias mrc='mem_recall'
 alias mx='mem_context'
 alias mp='mem_prefs'
 
+# Code quality aliases
+alias check_dupes='./tools/check_duplicates.sh'
+alias dupes='python3 tools/rule_of_three_checker.py'
+alias rule_of_three='./tools/check_duplicates.sh --ci'
+
 echo -e "${GREEN}🤖 AI Agent functions loaded!${NC}"
 echo -e "${PURPLE}Available commands:${NC}"
 echo -e "  ${CYAN}ads${NC}     - Start development session"

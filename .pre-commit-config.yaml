@@ -44,4 +44,15 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-requests]
+
+  # Rule of Three duplicate code checker
+  - repo: local
+    hooks:
+      - id: rule-of-three-check
+        name: Rule of Three Duplicate Code Check
+        entry: ./tools/check_duplicates.sh
+        args: ['--max-impact', '5.0', '--fail-on-duplication']
+        language: system
+        pass_filenames: false
+        stages: [pre-push]  # Only run on pre-push to avoid slowing down commits
         exclude: ^(tests/|docs/)

@@ -1,0 +1,213 @@
+name: "Agent Session Macros"
+description: "Interactive session macros for AI agent workflows"
+version: "1.0.0"
+
+macros:
+  - name: "agent_dev_session"
+    description: "Start a complete development session with agent context"
+    commands:
+      - echo "🤖 Starting AI Agent Development Session"
+      - echo "📍 Current Project: $(basename $(pwd))"
+      - echo "🌿 Current Branch: $(git branch --show-current)"
+      - echo "📊 Git Status:"
+      - git status --porcelain
+      - echo ""
+      - echo "🔧 Environment Setup:"
+      - export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+      - echo "✅ PYTHONPATH configured"
+      - echo "📦 Poetry Environment:"
+      - poetry env info
+      - echo ""
+      - echo "🚀 Services Status:"
+      - docker-compose ps
+      - echo ""
+      - echo "🎯 Agent Development Session Ready!"
+      - echo "💡 Available workflows: agent_test_suite, dev_environment, agent_pr_loop"
+      
+  - name: "agent_coding_session"
+    description: "Initialize coding session with quality checks"
+    commands:
+      - echo "💻 Starting Agent Coding Session"
+      - echo "🔍 Pre-coding checks:"
+      - poetry install --with dev,test --quiet
+      - echo "✅ Dependencies installed"
+      - poetry run ruff check . --quiet || echo "⚠️ Linting issues detected"
+      - poetry run mypy . --ignore-missing-imports --quiet || echo "⚠️ Type issues detected"
+      - echo ""
+      - echo "📝 Code quality tools ready:"
+      - echo "  - ruff (linting): poetry run ruff check . --fix"
+      - echo "  - black (formatting): poetry run black ."
+      - echo "  - isort (imports): poetry run isort ."
+      - echo "  - mypy (typing): poetry run mypy ."
+      - echo ""
+      - echo "🎯 Ready for coding! Use 'qf' alias for quick formatting."
+      
+  - name: "agent_test_session"
+    description: "Initialize comprehensive testing session"
+    commands:
+      - echo "🧪 Starting Agent Test Session"
+      - echo "🔧 Test environment setup:"
+      - poetry install --with dev,test,dagster --quiet
+      - mkdir -p reports/coverage
+      - echo "✅ Test dependencies installed"
+      - echo ""
+      - echo "🧪 Available test commands:"
+      - echo "  - All tests: poetry run pytest tests/ -v"
+      - echo "  - Unit tests: poetry run pytest tests/unit/ -v"
+      - echo "  - Integration: poetry run pytest tests/integration/ -v"
+      - echo "  - Dagster tests: cd orchestration/dagster && poetry run pytest test_dagster.py -v"
+      - echo "  - Coverage: poetry run pytest --cov=. --cov-report=html:reports/coverage/"
+      - echo ""
+      - echo "📊 Quick test: 'qt' alias"
+      - echo "🎯 Test session ready!"
+      
+  - name: "agent_deploy_session"
+    description: "Initialize deployment and PR session"
+    commands:
+      - echo "🚀 Starting Agent Deploy Session"
+      - echo "🔍 Pre-deployment checks:"
+      - git status --porcelain
+      - echo ""
+      - echo "🧪 Running pre-deploy validation:"
+      - poetry run pytest tests/ -x --tb=short --quiet
+      - if [ $? -eq 0 ]; then echo "✅ Tests passed"; else echo "❌ Tests failed - deployment blocked"; fi
+      - echo ""
+      - echo "🎨 Code quality check:"
+      - poetry run ruff check . --quiet && echo "✅ Linting passed" || echo "⚠️ Linting issues"
+      - echo ""
+      - echo "🌿 Branch info:"
+      - echo "  Current: $(git branch --show-current)"
+      - echo "  Commits ahead: $(git rev-list --count HEAD ^origin/$(git branch --show-current) 2>/dev/null || echo '0')"
+      - echo ""
+      - echo "📝 Deployment workflow available:"
+      - echo "  - Create PR: Use agent_pr_loop workflow"
+      - echo "  - Quick commit: Use git_commit_with_type template"
+      - echo "🎯 Deploy session ready!"
+      
+  - name: "agent_debug_session"
+    description: "Initialize debugging session with diagnostic tools"
+    commands:
+      - echo "🐛 Starting Agent Debug Session"
+      - echo "🔍 System diagnostics:"
+      - echo "  Python: $(python --version)"
+      - echo "  Poetry: $(poetry --version)"
+      - echo "  Git: $(git --version)"
+      - echo ""
+      - echo "📦 Environment info:"
+      - poetry env info
+      - echo ""
+      - echo "🐳 Docker status:"
+      - docker-compose ps
+      - echo ""
+      - echo "🔧 Service health:"
+      - poetry run python -c "
+      try:
+          import psycopg2
+          conn = psycopg2.connect('postgresql://user:password@localhost:5432/freelancer_db')
+          print('✅ PostgreSQL: Connected')
+          conn.close()
+      except:
+          print('❌ PostgreSQL: Connection failed')
+      
+      try:
+          import redis
+          r = redis.Redis(host='localhost', port=6379, db=0)
+          r.ping()
+          print('✅ Redis: Connected')
+      except:
+          print('❌ Redis: Connection failed')
+      " 2>/dev/null
+      - echo ""
+      - echo "📊 Recent logs:"
+      - echo "  Docker logs: docker-compose logs --tail=20"
+      - echo "  App logs: find logs/ -name '*.log' -exec tail -5 {} \;"
+      - echo "🎯 Debug session ready!"
+      
+  - name: "agent_cleanup_session"
+    description: "Cleanup session for maintenance"
+    commands:
+      - echo "🧹 Starting Agent Cleanup Session"
+      - echo "🗑️ Cleaning caches:"
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -name "*.pyc" -delete 2>/dev/null || true
+      - echo "✅ Python cache cleaned"
+      - poetry cache clear --all pypi --quiet
+      - echo "✅ Poetry cache cleaned"
+      - echo ""
+      - echo "🐳 Docker cleanup:"
+      - docker system prune -f --volumes
+      - echo "✅ Docker cleanup completed"
+      - echo ""
+      - echo "🌿 Git cleanup:"
+      - git gc --prune=now --aggressive
+      - echo "✅ Git cleanup completed"
+      - echo ""
+      - echo "📊 Disk usage:"
+      - du -sh .git/ node_modules/ 2>/dev/null || echo "No large directories found"
+      - echo "🎯 Cleanup session completed!"
+
+interactive_prompts:
+  - name: "agent_task_selector"
+    description: "Interactive task selection for agent workflows"
+    prompt: |
+      🤖 AI Agent Task Selector
+      
+      Select your task:
+      1. 🧪 Run comprehensive tests
+      2. 💻 Start coding session
+      3. 🚀 Deploy/PR workflow
+      4. 🐛 Debug issues
+      5. 🧹 Cleanup and maintenance
+      6. 📊 View project status
+      
+      Choice (1-6):
+    actions:
+      "1": "agent_test_session"
+      "2": "agent_coding_session"
+      "3": "agent_deploy_session"
+      "4": "agent_debug_session"
+      "5": "agent_cleanup_session"
+      "6": "agent_dev_session"
+      
+  - name: "agent_quality_gate"
+    description: "Interactive quality gate for deployments"
+    prompt: |
+      🚦 Quality Gate Check
+      
+      Before proceeding, verify:
+      ✅ All tests pass
+      ✅ Code is formatted and linted
+      ✅ Documentation is updated
+      ✅ No sensitive data exposed
+      
+      Proceed with deployment? (y/n):
+    actions:
+      "y": "echo '🚀 Proceeding with deployment...' && source .warp/workflows/agent_pr_loop.yaml"
+      "n": "echo '❌ Deployment cancelled. Fix issues first.'"
+      "": "echo '❌ Deployment cancelled. Fix issues first.'"
+
+context_setters:
+  - name: "set_agent_context"
+    description: "Set up AI agent context variables"
+    variables:
+      AGENT_SESSION_START: "$(date '+%Y-%m-%d %H:%M:%S')"
+      AGENT_PROJECT_ROOT: "$(pwd)"
+      AGENT_CURRENT_BRANCH: "$(git branch --show-current)"
+      AGENT_PYTHON_VERSION: "$(python --version)"
+      AGENT_POETRY_ENV: "$(poetry env info --path)"
+      
+  - name: "set_dev_context"
+    description: "Set up development context"
+    variables:
+      PYTHONPATH: "${PYTHONPATH}:$(pwd)"
+      DAGSTER_HOME: "$(pwd)/orchestration/dagster"
+      DBT_PROFILES_DIR: "$(pwd)/transformation/dbt/profiles"
+      
+shortcuts:
+  # Quick session starters
+  "ads": "agent_dev_session"
+  "acs": "agent_coding_session"
+  "ats": "agent_test_session"
+  "ajs": "agent_deploy_session"
+  "abs": "agent_debug_session"
+  "acl": "agent_cleanup_session"

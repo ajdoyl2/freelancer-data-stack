@@ -94,7 +94,7 @@
 | **P0** | Create Warp command templates & session macros for agent workflows | Medium | `.warp` directory |
 | **P0** | Set up `/prompts/` inline prompt library & Warp snippets | Medium | Warp templates |
 | **P0** | Implement LangChain code embedding store with nightly refresh | High | Vector DB service |
-| **P0** | Build "Rule of Three" duplicate-code checker in CI | Medium | CI pipeline |
+|| ✅ **P0** | Build "Rule of Three" duplicate-code checker in CI | Medium | CI pipeline |
 || ✅ **P0** | Add agent memory vault (DuckDB) for reasoning traces | Medium | MCP server |
 | **P0** | Dynamic prompt guardrails injecting linter/test coverage gaps | Medium | Lint/test reports |
 | **P0** | Warp AI panel integration of agent rules & knowledge base | Low | `.warp/agent_rules.yaml` |

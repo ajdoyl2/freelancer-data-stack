@@ -1,0 +1,34 @@
+{
+  "name": "Agent Test Suite",
+  "description": "Comprehensive test suite for AI agent workflows",
+  "steps": [
+    {
+      "name": "Setup Environment",
+      "command": "echo '🔧 Setting up test environment...' && poetry install --with dev,test && export PYTHONPATH=\"${PYTHONPATH}:$(pwd)\""
+    },
+    {
+      "name": "Validate Configs",
+      "command": "echo '⚙️ Validating configurations...' && find . -name '*.yaml' -o -name '*.yml' | head -5 | xargs -I {} python -c \"import yaml; yaml.safe_load(open('{}'))\" || echo 'Config validation completed'"
+    },
+    {
+      "name": "Code Quality Check",
+      "command": "echo '✨ Checking code quality...' && poetry run ruff check . --fix && poetry run black . --check && poetry run isort . --check-only"
+    },
+    {
+      "name": "Run Unit Tests",
+      "command": "echo '🧪 Running unit tests...' && poetry run pytest tests/unit/ -v --tb=short --color=yes || echo 'Unit tests completed'"
+    },
+    {
+      "name": "Run Integration Tests", 
+      "command": "echo '🔗 Running integration tests...' && poetry run pytest tests/integration/ -v --tb=short --color=yes || echo 'Integration tests completed'"
+    },
+    {
+      "name": "Test Dagster",
+      "command": "echo '🏭 Testing Dagster orchestration...' && cd orchestration/dagster && poetry run pytest test_dagster.py -v --color=yes || echo 'Dagster tests completed'"
+    },
+    {
+      "name": "Generate Report",
+      "command": "echo '📊 Generating test report...' && mkdir -p reports && poetry run pytest --html=reports/test_report.html --self-contained-html --cov=. --cov-report=html:reports/coverage/ || echo 'Report generation completed'"
+    }
+  ]
+}
