@@ -52,13 +52,24 @@
 
 ## 🚧 Current Outstanding Items
 
+### 🚀 **PRIORITY #1: Meltano Modern Stack Testing**
+| Priority | Task | Effort | Dependencies |
+|----------|------|--------|--------------|
+| **P0** | **Execute Meltano Pipeline Testing Plan** | High | ✅ Dependencies installed, PR created |
+| **P0** | Validate end-to-end Meltano → dbt → DuckDB pipeline | High | Sample CSV data, DuckDB setup |
+| **P0** | Test customer segmentation transformations | Medium | dbt models, data quality tests |
+| **P0** | Verify Meltano orchestration and scheduling | Medium | Meltano configuration |
+| **P0** | Document pipeline performance benchmarks | Low | Successful pipeline execution |
+
+> 📋 **See**: `PIPELINE_TESTING_PLAN.md` for detailed step-by-step testing guide
+> 🎯 **Goal**: Validate fully modernized Meltano-based stack replacing Dagster+Airbyte
+
 ### 🔧 **Technical Debt & Improvements**
 | Priority | Task | Effort | Dependencies |
 |----------|------|--------|--------------|
-| **High** | Fix remaining Dagster test failures (7 tests) | Medium | Dagster API compatibility |
-| **High** | Validate Airbyte data ingestion pipeline | High | Docker services, source connectors |
-| **Medium** | Complete DataHub integration testing | Medium | Kafka, Elasticsearch services |
-| **Medium** | Validate Great Expectations data quality | Medium | Jupyter service, test suites |
+| **Medium** | Consider Airflow re-integration | High | SQLAlchemy compatibility resolution |
+| **Low** | Complete DataHub integration testing | Medium | Kafka, Elasticsearch services |
+| **Low** | Validate Great Expectations data quality | Medium | Jupyter service, test suites |
 | **Low** | Set up Metabase dashboards | Low | PostgreSQL connection |
 
 ### 📊 **Analytics & Visualization Enhancements**

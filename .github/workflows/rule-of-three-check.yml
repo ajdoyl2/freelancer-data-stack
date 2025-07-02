@@ -10,24 +10,24 @@ on:
 jobs:
   duplicate-code-check:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pyyaml
-        
+
     - name: Create reports directory
       run: mkdir -p reports
-      
+
     - name: Run Rule of Three checker
       id: duplication_check
       run: |
@@ -38,7 +38,7 @@ jobs:
           --exclude test_ __pycache__ .pyc migrations vendor \
           --fail-on-duplication \
           > reports/duplication-report.txt
-        
+
         # Also generate JSON for machine processing
         python tools/rule_of_three_checker.py . \
           --min-similarity 0.8 \
@@ -48,7 +48,7 @@ jobs:
           --json \
           > reports/duplication-report.json
       continue-on-error: true
-      
+
     - name: Check results
       id: check_results
       run: |
@@ -56,10 +56,10 @@ jobs:
           # Extract summary from JSON
           TOTAL_GROUPS=$(python -c "import json; data=json.load(open('reports/duplication-report.json')); print(data['summary']['total_groups'])")
           HIGH_IMPACT=$(python -c "import json; data=json.load(open('reports/duplication-report.json')); print(data['summary']['high_impact_groups'])")
-          
+
           echo "total_groups=$TOTAL_GROUPS" >> $GITHUB_OUTPUT
           echo "high_impact_groups=$HIGH_IMPACT" >> $GITHUB_OUTPUT
-          
+
           if [ "$HIGH_IMPACT" -gt 0 ]; then
             echo "status=failed" >> $GITHUB_OUTPUT
             echo "::error title=High-Impact Code Duplication::Found $HIGH_IMPACT high-impact duplication groups"
@@ -74,92 +74,92 @@ jobs:
           echo "total_groups=0" >> $GITHUB_OUTPUT
           echo "high_impact_groups=0" >> $GITHUB_OUTPUT
         fi
-        
+
     - name: Create GitHub annotations
       if: steps.check_results.outputs.total_groups != '0'
       run: |
         python -c "
         import json
-        
+
         with open('reports/duplication-report.json', 'r') as f:
             data = json.load(f)
-        
+
         for group in data['duplication_groups']:
             if group['impact_score'] >= 5.0:
                 level = 'error'
             else:
                 level = 'warning'
-                
+
             for fragment in group['fragments']:
                 file_path = fragment['file_path']
                 start_line = fragment['start_line']
                 end_line = fragment['end_line']
                 message = f\"Duplicate {group['fragment_type']} (Impact: {group['impact_score']:.1f}) - {group['suggested_refactoring']}\"
-                
+
                 print(f\"::{level} file={file_path},line={start_line},endLine={end_line}::{message}\")
         "
-        
+
     - name: Upload reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: duplication-reports
         path: reports/
         retention-days: 30
-        
+
     - name: Comment on PR
       if: github.event_name == 'pull_request' && steps.check_results.outputs.total_groups != '0'
       uses: actions/github-script@v6
       with:
         script: |
           const fs = require('fs');
-          
+
           // Read the text report
           const reportText = fs.readFileSync('reports/duplication-report.txt', 'utf8');
           const reportJson = JSON.parse(fs.readFileSync('reports/duplication-report.json', 'utf8'));
-          
+
           const totalGroups = reportJson.summary.total_groups;
           const highImpact = reportJson.summary.high_impact_groups;
-          
+
           let status = '';
           if (highImpact > 0) {
             status = '❌ **High-Impact Duplications Found**';
           } else if (totalGroups > 0) {
             status = '⚠️ **Code Duplications Detected**';
           }
-          
+
           const comment = `## 🔍 Rule of Three Duplicate Code Analysis
-          
+
           ${status}
-          
+
           ### Summary
           - **Total duplication groups**: ${totalGroups}
           - **High-impact groups**: ${highImpact}
           - **Average impact score**: ${reportJson.summary.average_impact.toFixed(1)}
-          
+
           ### Report
           \`\`\`
           ${reportText.length > 3000 ? reportText.substring(0, 3000) + '\n... (truncated)' : reportText}
           \`\`\`
-          
+
           ${highImpact > 0 ? '🚨 **Action Required**: High-impact duplications should be refactored before merging.' : ''}
-          
+
           <details>
           <summary>View full JSON report</summary>
-          
+
           \`\`\`json
           ${JSON.stringify(reportJson, null, 2)}
           \`\`\`
           </details>
           `;
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: comment
           });
-          
+
     - name: Fail if high-impact duplications found
       if: steps.check_results.outputs.status == 'failed'
       run: |
