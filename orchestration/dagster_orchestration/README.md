@@ -22,7 +22,7 @@ The pipeline is organized into asset groups:
 - `airbyte_sync_job` - Airbyte data extraction from external sources
 - `dlt_ingestion_pipeline` - dlt pipeline for data loading
 
-#### Transformation Assets  
+#### Transformation Assets
 - `dbt_run` - dbt transformations and model execution
 - `dbt_test` - dbt data quality tests
 
@@ -70,7 +70,7 @@ AIRBYTE_HOST=localhost
 AIRBYTE_PORT=8000
 AIRBYTE_CONNECTION_ID=your-connection-id
 
-# dlt Configuration  
+# dlt Configuration
 DLT_PIPELINE_NAME=freelancer_data
 DLT_DESTINATION=duckdb
 DLT_DATASET_NAME=freelancer_raw
@@ -186,7 +186,7 @@ sensor_state = instance.get_sensor_state("github_release_sensor")
 
 The `pipeline_monitoring` job performs health checks on:
 - Airbyte connectivity
-- DuckDB connectivity  
+- DuckDB connectivity
 - DataHub API access
 - GitHub API access
 
@@ -270,7 +270,7 @@ Define custom resources for external integrations:
 class MyServiceResource(ConfigurableResource):
     api_key: str
     base_url: str
-    
+
     def get_client(self):
         return MyServiceClient(self.api_key, self.base_url)
 ```

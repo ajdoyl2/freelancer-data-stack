@@ -86,16 +86,16 @@ Options:
         """Process input data with validation."""
         if not input_data:
             raise ValueError("Input data cannot be empty")
-        
+
         # Normalize data structure
         normalized = {}
         for key, value in input_data.items():
             normalized[key.lower()] = str(value).strip()
-        
+
         # Apply business rules
         if 'id' not in normalized:
             normalized['id'] = generate_id()
-        
+
         return normalized
 ```
 
@@ -231,7 +231,7 @@ Add to `Makefile`:
 check-duplicates:
 	@echo "🔍 Checking for duplicate code..."
 	./tools/check_duplicates.sh --ci
-	
+
 .PHONY: check-duplicates-strict
 check-duplicates-strict:
 	@echo "🔍 Strict duplicate code check..."

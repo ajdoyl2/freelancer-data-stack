@@ -74,7 +74,7 @@ jobs:
       github.ref == 'refs/heads/main' ||
       startsWith(github.ref, 'refs/tags/v') ||
       needs.detect-changes.outputs[matrix.service] == 'true'
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -88,7 +88,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: transformation
             runner: ubuntu-latest
             platform: linux/amd64
@@ -97,7 +97,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: orchestration
             runner: ubuntu-latest
             platform: linux/amd64
@@ -106,7 +106,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: api
             runner: ubuntu-latest
             platform: linux/amd64
@@ -115,7 +115,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: quality
             runner: ubuntu-latest
             platform: linux/amd64
@@ -124,7 +124,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           # ARM64 builds for local M1/M2 development
           - service: ingestion
             runner: macos-latest
@@ -134,7 +134,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: transformation
             runner: macos-latest
             platform: linux/arm64
@@ -143,7 +143,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: orchestration
             runner: macos-latest
             platform: linux/arm64
@@ -152,7 +152,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: api
             runner: macos-latest
             platform: linux/arm64
@@ -161,7 +161,7 @@ jobs:
             build_args: |
               PYTHON_VERSION=3.11
               POETRY_VERSION=1.7.1
-          
+
           - service: quality
             runner: macos-latest
             platform: linux/arm64
@@ -276,11 +276,11 @@ jobs:
       (github.event_name == 'workflow_dispatch' ||
        github.ref == 'refs/heads/main' ||
        startsWith(github.ref, 'refs/tags/v'))
-    
+
     strategy:
       matrix:
         service: [ingestion, transformation, orchestration, api, quality]
-    
+
     steps:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -311,12 +311,12 @@ jobs:
         # Extract the first tag for manifest creation
         MAIN_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
         BASE_TAG=$(echo "$MAIN_TAG" | sed 's/-amd64$//' | sed 's/-arm64$//')
-        
+
         # Create manifest combining both architectures
         docker manifest create $BASE_TAG \
           --amend $BASE_TAG-amd64 \
           --amend $BASE_TAG-arm64 2>/dev/null || true
-        
+
         # Push the manifest
         docker manifest push $BASE_TAG || echo "Manifest push failed - one or both architectures may not exist"
 
@@ -327,7 +327,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main' &&
       github.event_name != 'pull_request'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -346,10 +346,10 @@ jobs:
       run: |
         # Extract short SHA for tagging
         SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-        
+
         # Update docker-compose.yml with new image tags
         sed -i.bak "s|image: .*freelancer-data-stack/\([^:]*\):.*|image: ${{ env.ECR_REGISTRY }}/\1:main-$SHORT_SHA-amd64|g" docker-compose.yml
-        
+
         # Commit and push changes if any
         if ! git diff --quiet docker-compose.yml; then
           git config --local user.email "action@github.com"
@@ -364,11 +364,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-push
     if: github.event_name != 'pull_request'
-    
+
     strategy:
       matrix:
         service: [ingestion, transformation, orchestration, api, quality]
-    
+
     steps:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -398,7 +398,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-push, create-manifest, update-deployment]
     if: always() && github.ref == 'refs/heads/main'
-    
+
     steps:
     - name: Notify success
       if: needs.build-push.result == 'success' && needs.create-manifest.result == 'success'

@@ -27,7 +27,7 @@ You're absolutely right! Instead of our file-based system, we should use Warp's 
 - **Command**: Copy from `.warp/workflows_for_import.json`
 - **Tags**: `ai, code-review, quality, python, dagster, dbt`
 
-### 2. Data Pipeline Design  
+### 2. Data Pipeline Design
 - **Name**: `Data Pipeline Design`
 - **Description**: `Design comprehensive data pipeline architecture with Dagster and dbt`
 - **Command**: Copy from `.warp/workflows_for_import.json`
@@ -93,7 +93,7 @@ You're absolutely right! Instead of our file-based system, we should use Warp's 
 
 After adding the workflows:
 
-1. **Test Discovery**: 
+1. **Test Discovery**:
    ```
    Cmd+P → type "AI Code" → should find "AI Code Review"
    ```

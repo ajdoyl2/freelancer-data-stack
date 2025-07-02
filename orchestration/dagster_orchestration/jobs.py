@@ -7,24 +7,13 @@ with different execution patterns and configurations.
 
 from dagster import (
     AssetSelection,
-    DefaultSensorStatus,
-    define_asset_job,
-    job,
-    op,
     Config,
     OpExecutionContext,
+    define_asset_job,
     get_dagster_logger,
+    job,
+    op,
 )
-
-from .assets import (
-    airbyte_sync_job,
-    dlt_ingestion_pipeline,
-    dbt_run,
-    dbt_test,
-    great_expectations_validation,
-    datahub_metadata_ingestion,
-)
-
 
 # Full data pipeline job - runs all assets in dependency order
 daily_data_pipeline = define_asset_job(
@@ -41,9 +30,11 @@ daily_data_pipeline = define_asset_job(
 
 # Ingestion-only job for incremental updates
 incremental_sync_pipeline = define_asset_job(
-    name="incremental_sync_pipeline", 
+    name="incremental_sync_pipeline",
     description="Incremental sync pipeline for frequent data updates",
-    selection=AssetSelection.groups("ingestion", "transformation").downstream(include_self=True),
+    selection=AssetSelection.groups("ingestion", "transformation").downstream(
+        include_self=True
+    ),
     tags={
         "team": "data",
         "pipeline_type": "incremental",
@@ -56,7 +47,9 @@ incremental_sync_pipeline = define_asset_job(
 transformation_pipeline = define_asset_job(
     name="transformation_pipeline",
     description="Data transformation and testing pipeline",
-    selection=AssetSelection.groups("transformation", "quality").downstream(include_self=True),
+    selection=AssetSelection.groups("transformation", "quality").downstream(
+        include_self=True
+    ),
     tags={
         "team": "data",
         "pipeline_type": "transformation",
@@ -120,7 +113,7 @@ file_processing_pipeline = define_asset_job(
 # Emergency data refresh job
 class EmergencyRefreshConfig(Config):
     """Configuration for emergency data refresh operations."""
-    
+
     skip_validations: bool = False
     force_full_refresh: bool = True
     target_models: list[str] = []
@@ -130,28 +123,28 @@ class EmergencyRefreshConfig(Config):
 def emergency_refresh_preparation(context: OpExecutionContext):
     """
     Preparation step for emergency data refresh.
-    
+
     Logs the emergency refresh parameters and validates configuration.
     """
     logger = get_dagster_logger()
-    
+
     logger.warning("Emergency data refresh initiated!")
-    
+
     # Use default emergency config values
     skip_validations = False
     force_full_refresh = True
     target_models = []
-    
+
     logger.info(f"Skip validations: {skip_validations}")
     logger.info(f"Force full refresh: {force_full_refresh}")
     logger.info(f"Target models: {target_models}")
-    
+
     if skip_validations:
         logger.warning("Data validations will be skipped - use with caution!")
-    
+
     if force_full_refresh:
         logger.info("Full refresh will be performed on all models")
-    
+
     return {
         "skip_validations": skip_validations,
         "force_full_refresh": force_full_refresh,
@@ -170,7 +163,7 @@ def emergency_refresh_preparation(context: OpExecutionContext):
 def emergency_data_refresh():
     """
     Emergency data refresh job that can skip validations if needed.
-    
+
     This job is designed for urgent data refresh scenarios where
     normal validation processes might be bypassed.
     """
@@ -182,24 +175,26 @@ def emergency_data_refresh():
 def pipeline_health_check(context: OpExecutionContext):
     """
     Performs health checks on the data pipeline infrastructure.
-    
+
     Checks connectivity to data sources, warehouses, and external services.
     """
     logger = get_dagster_logger()
-    
+
     health_checks = {
         "airbyte_connectivity": True,  # Would check actual Airbyte API
-        "duckdb_connectivity": True,   # Would check DuckDB connection
+        "duckdb_connectivity": True,  # Would check DuckDB connection
         "datahub_connectivity": True,  # Would check DataHub API
-        "github_api": True,           # Would check GitHub API access
+        "github_api": True,  # Would check GitHub API access
     }
-    
+
     failed_checks = [service for service, status in health_checks.items() if not status]
-    
+
     if failed_checks:
         logger.error(f"Health check failures detected: {failed_checks}")
-        raise RuntimeError(f"Pipeline health check failed for: {', '.join(failed_checks)}")
-    
+        raise RuntimeError(
+            f"Pipeline health check failed for: {', '.join(failed_checks)}"
+        )
+
     logger.info("All pipeline health checks passed")
     return health_checks
 
@@ -215,7 +210,7 @@ def pipeline_health_check(context: OpExecutionContext):
 def pipeline_monitoring():
     """
     Monitoring job that performs health checks on pipeline infrastructure.
-    
+
     This job can be scheduled to run regularly to ensure all pipeline
     components are healthy and accessible.
     """
@@ -240,20 +235,30 @@ dev_pipeline = define_asset_job(
 def backfill_preparation(context: OpExecutionContext):
     """
     Preparation step for backfill operations.
-    
+
     Sets up the environment and validates parameters for backfill processing.
     """
     logger = get_dagster_logger()
-    
+
     # Get backfill parameters from run config
-    start_date = context.run_config.get("ops", {}).get("backfill_preparation", {}).get("config", {}).get("start_date")
-    end_date = context.run_config.get("ops", {}).get("backfill_preparation", {}).get("config", {}).get("end_date")
-    
+    start_date = (
+        context.run_config.get("ops", {})
+        .get("backfill_preparation", {})
+        .get("config", {})
+        .get("start_date")
+    )
+    end_date = (
+        context.run_config.get("ops", {})
+        .get("backfill_preparation", {})
+        .get("config", {})
+        .get("end_date")
+    )
+
     if not start_date or not end_date:
         raise ValueError("Both start_date and end_date must be provided for backfill")
-    
+
     logger.info(f"Preparing backfill from {start_date} to {end_date}")
-    
+
     return {
         "start_date": start_date,
         "end_date": end_date,
@@ -266,7 +271,7 @@ backfill_pipeline = define_asset_job(
     description="Backfill pipeline for historical data processing",
     selection=AssetSelection.all(),
     tags={
-        "team": "data", 
+        "team": "data",
         "pipeline_type": "backfill",
         "schedule": "on_demand",
     },

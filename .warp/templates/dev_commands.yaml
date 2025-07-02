@@ -11,7 +11,7 @@ templates:
         description: "Comma-separated list of dependency groups (dev,test,dagster,streamlit,mcp-server)"
         default: "dev,test"
         suggestions: ["dev,test", "dagster", "streamlit", "mcp-server", "dev,test,dagster", "all"]
-        
+
   - name: "pytest_with_options"
     description: "Run pytest with common options"
     template: "poetry run pytest {{path}} {{options}}"
@@ -24,7 +24,7 @@ templates:
         description: "Pytest options"
         default: "-v --tb=short"
         suggestions: ["-v --tb=short", "-x -v", "--cov=. --cov-report=html", "--html=reports/test_report.html"]
-        
+
   - name: "docker_compose_service"
     description: "Docker compose operations on specific services"
     template: "docker-compose {{action}} {{services}}"
@@ -37,7 +37,7 @@ templates:
         description: "Service names (space-separated)"
         default: "postgres redis"
         suggestions: ["postgres", "redis", "postgres redis", "dagster", "streamlit"]
-        
+
   - name: "git_commit_with_type"
     description: "Git commit with conventional commit format"
     template: "git add . && git commit -m \"{{type}}{{scope}}: {{description}}\""
@@ -53,7 +53,7 @@ templates:
       description:
         description: "Commit description"
         default: "automated improvements"
-        
+
   - name: "dbt_run_with_options"
     description: "Run dbt with common options"
     template: "cd transformation/dbt && poetry run dbt {{command}} {{options}}"
@@ -66,7 +66,7 @@ templates:
         description: "dbt options"
         default: "--profiles-dir profiles"
         suggestions: ["--profiles-dir profiles", "--select {{model}}", "--full-refresh", "--vars '{\"key\": \"value\"}'"]
-        
+
   - name: "dagster_dev_server"
     description: "Start Dagster development server"
     template: "cd orchestration/dagster && poetry run dagster dev {{options}}"
@@ -75,7 +75,7 @@ templates:
         description: "Dagster dev options"
         default: "--host 0.0.0.0 --port 3000"
         suggestions: ["--host 0.0.0.0 --port 3000", "--host localhost --port 3000", "--port 3001"]
-        
+
   - name: "streamlit_app"
     description: "Run Streamlit application"
     template: "cd viz/streamlit && poetry run streamlit run {{app}} {{options}}"
@@ -88,7 +88,7 @@ templates:
         description: "Streamlit options"
         default: "--server.port 8501"
         suggestions: ["--server.port 8501", "--server.port 8502", "--server.headless true"]
-        
+
   - name: "code_quality_check"
     description: "Run code quality tools"
     template: "poetry run {{tool}} {{options}} {{path}}"
@@ -105,7 +105,7 @@ templates:
         description: "Path to check"
         default: "."
         suggestions: [".", "src/", "tests/", "orchestration/", "transformation/"]
-        
+
   - name: "env_var_export"
     description: "Export environment variable"
     template: "export {{var_name}}={{var_value}}"
@@ -117,7 +117,7 @@ templates:
       var_value:
         description: "Environment variable value"
         default: "${PYTHONPATH}:$(pwd)"
-        
+
   - name: "find_files_by_pattern"
     description: "Find files matching pattern"
     template: "find {{path}} -name \"{{pattern}}\" {{options}}"
@@ -134,7 +134,7 @@ templates:
         description: "Find options"
         default: "-type f"
         suggestions: ["-type f", "-type d", "-maxdepth 2", "-name", "-iname"]
-        
+
   - name: "grep_in_files"
     description: "Search for text in files"
     template: "grep -r {{options}} \"{{pattern}}\" {{path}}"
@@ -157,27 +157,27 @@ aliases:
   - alias: "qi"
     command: "poetry install --with dev,test"
     description: "Quick install with dev dependencies"
-    
+
   - alias: "qr"
     command: "poetry run"
     description: "Quick poetry run prefix"
-    
+
   - alias: "qt"
     command: "poetry run pytest tests/ -v --tb=short"
     description: "Quick test run"
-    
+
   - alias: "qf"
     command: "poetry run ruff check . --fix && poetry run black . && poetry run isort ."
     description: "Quick format and lint"
-    
+
   - alias: "qs"
     command: "docker-compose up -d postgres redis"
     description: "Quick start services"
-    
+
   - alias: "qd"
     command: "docker-compose down"
     description: "Quick stop services"
-    
+
   - alias: "qc"
     command: "find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true"
     description: "Quick cache clean"

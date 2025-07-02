@@ -10,17 +10,17 @@ resource "snowflake_database" "main" {
 resource "snowflake_warehouse" "main" {
   name         = "${upper(var.project_name)}_${upper(var.environment)}_WH"
   warehouse_size = var.warehouse_size
-  
+
   auto_suspend = var.auto_suspend
   auto_resume  = true
-  
+
   comment = "Warehouse for ${var.project_name} ${var.environment} environment"
 }
 
 # Snowflake Schemas
 resource "snowflake_schema" "schemas" {
   for_each = toset(var.schemas)
-  
+
   database = snowflake_database.main.name
   name     = upper(each.key)
   comment  = "Schema for ${each.key} in ${var.environment} environment"
@@ -39,11 +39,11 @@ resource "snowflake_user" "app_user" {
   name         = "${upper(var.project_name)}_${upper(var.environment)}_USER"
   login_name   = "${lower(var.project_name)}_${lower(var.environment)}_user"
   comment      = "User for ${var.project_name} application in ${var.environment} environment"
-  
+
   default_warehouse = snowflake_warehouse.main.name
   default_role      = snowflake_account_role.app_role.name
   default_namespace = "${snowflake_database.main.name}.${snowflake_schema.schemas["RAW"].name}"
-  
+
   must_change_password = false
 }
 
@@ -76,7 +76,7 @@ resource "snowflake_grant_privileges_to_account_role" "database_usage" {
 # Grant schema privileges to role
 resource "snowflake_grant_privileges_to_account_role" "schema_privileges" {
   for_each = snowflake_schema.schemas
-  
+
   privileges        = ["USAGE", "CREATE TABLE", "CREATE VIEW", "CREATE STAGE", "CREATE SEQUENCE"]
   account_role_name = snowflake_account_role.app_role.name
   on_schema {
@@ -89,15 +89,15 @@ resource "snowflake_file_format" "csv_format" {
   name     = "CSV_FORMAT"
   database = snowflake_database.main.name
   schema   = snowflake_schema.schemas["RAW"].name
-  
+
   format_type = "CSV"
-  
+
   field_delimiter = ","
   skip_header     = 1
   null_if         = ["NULL", "null", ""]
   empty_field_as_null = true
   compression     = "AUTO"
-  
+
   comment = "CSV file format for data ingestion"
 }
 
@@ -106,11 +106,11 @@ resource "snowflake_file_format" "json_format" {
   name     = "JSON_FORMAT"
   database = snowflake_database.main.name
   schema   = snowflake_schema.schemas["RAW"].name
-  
+
   format_type = "JSON"
-  
+
   compression = "AUTO"
-  
+
   comment = "JSON file format for data ingestion"
 }
 
@@ -119,10 +119,10 @@ resource "snowflake_file_format" "parquet_format" {
   name     = "PARQUET_FORMAT"
   database = snowflake_database.main.name
   schema   = snowflake_schema.schemas["RAW"].name
-  
+
   format_type = "PARQUET"
-  
+
   compression = "AUTO"
-  
+
   comment = "Parquet file format for data ingestion"
 }

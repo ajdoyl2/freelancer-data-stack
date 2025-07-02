@@ -49,7 +49,7 @@ You're absolutely right - Warp has built-in prompt storage that we should use in
 
 ### 2. Add to Warp via UI
 1. Open Warp
-2. Press `Cmd+P` 
+2. Press `Cmd+P`
 3. Type "Add Workflow"
 4. Fill in the details from our prompts
 

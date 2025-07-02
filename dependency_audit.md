@@ -4,7 +4,7 @@
 
 This audit covers all dependencies across:
 - **pyproject.toml** (Poetry configuration with multiple groups)
-- **mcp-server/requirements.txt** 
+- **mcp-server/requirements.txt**
 - **viz/streamlit/requirements.txt**
 - **Currently installed packages** (pip list)
 - **Latest available versions** on PyPI
@@ -108,7 +108,7 @@ This audit covers all dependencies across:
 ## 🛠️ Recommended Actions
 
 ### Immediate (Critical):
-1. **Fix Dagster Incompatibility**: 
+1. **Fix Dagster Incompatibility**:
    - Remove or update `dagster-datahub` and `dagster-docker` to versions compatible with dagster 1.8+
    - Install dagster dependencies to resolve the missing packages
 

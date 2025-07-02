@@ -23,7 +23,7 @@ model_routing:
         - complexity: ["low", "medium"]
         - error_retries: "<2"
         - task_type: ["coding", "debugging", "refactoring", "code_review"]
-      
+
     # High accuracy tier - Complex coding tasks
     high_accuracy:
       primary: "anthropic/claude-3-opus"
@@ -32,7 +32,7 @@ model_routing:
         - systems: ["critical", "production"]
         - complexity: ["high", "critical"]
         - task_type: ["architecture", "performance_optimization", "security_implementation"]
-      
+
     # Fallback tier - Error recovery and multimodal
     fallback:
       primary: "google/gemini-2.5-pro"
@@ -55,7 +55,7 @@ model_routing:
 routing_preferences:
   # Explicit preference for Claude 4 Sonnet for standard coding
   standard_coding_preference: "anthropic/claude-4-sonnet"
-  
+
   # Escalation to Opus for complex tasks
   complex_task_escalation:
     trigger_conditions:
@@ -63,20 +63,20 @@ routing_preferences:
       - complexity: ["high", "critical"]
       - systems: ["critical", "production"]
     target_model: "anthropic/claude-3-opus"
-  
+
   # Reserve Gemini for fallback or creative usage
   gemini_usage:
     primary_use_cases: ["fallback", "creative", "multimodal"]
     fallback_triggers:
       - error_retries: ">2"
       - multimodal_required: true
-  
+
   # Complexity-based routing with line thresholds
   complexity_thresholds:
     simple: "<100 lines"
     medium: "100-250 lines"
     complex: ">250 lines"
-  
+
   # Isolate multimodal capabilities
   multimodal_isolation:
     dedicated_model: "google/gemini-2.5-pro"
@@ -90,7 +90,7 @@ task_classification:
     - "project_management"
     - "architecture_design"
     - "requirement_analysis"
-  
+
   code_centric:
     - "coding"
     - "debugging"
@@ -100,7 +100,7 @@ task_classification:
     - "performance_optimization"
     - "security_implementation"
     - "api_development"
-  
+
   creative_exploratory:
     - "creative"
     - "exploratory"
@@ -117,19 +117,19 @@ complexity_criteria:
     - files_affected: "<5"
     - dependency_changes: false
     - breaking_changes: false
-  
+
   medium:
     - changed_lines: "100-250"
     - files_affected: "5-15"
     - dependency_changes: "minor"
     - breaking_changes: "backwards_compatible"
-  
+
   high:
     - changed_lines: "250-500"
     - files_affected: "15-30"
     - dependency_changes: "major"
     - breaking_changes: "some"
-  
+
   critical:
     - changed_lines: ">500"
     - files_affected: ">30"
@@ -146,7 +146,7 @@ error_handling:
       model: "first_fallback"
     - attempt: 3
       model: "google/gemini-2.5-pro"  # Ultimate fallback
-  
+
   error_types:
     timeout: "escalate_to_faster_model"
     context_limit: "escalate_to_higher_capacity_model"
@@ -161,7 +161,7 @@ performance_tracking:
     - "retry_count"
     - "task_completion_rate"
     - "user_satisfaction"
-  
+
   optimization_triggers:
     - high_retry_rate: "review_model_assignment"
     - low_accuracy: "consider_model_upgrade"
@@ -173,15 +173,15 @@ special_cases:
     dagster_tasks:
       preferred_model: "anthropic/claude-4-sonnet"
       escalation_model: "anthropic/claude-3-opus"
-    
+
     dbt_transformations:
       preferred_model: "anthropic/claude-4-sonnet"
       complex_sql_model: "anthropic/claude-3-opus"
-    
+
     docker_compose_management:
       preferred_model: "anthropic/claude-4-sonnet"
       infrastructure_model: "anthropic/claude-3-opus"
-    
+
     dependency_management:
       preferred_model: "anthropic/claude-4-sonnet"
       compatibility_analysis: "anthropic/claude-3-opus"
@@ -201,7 +201,7 @@ model_validation:
       - "gemini-2.0-pro"  # Fallback
     mistral:
       - "mixtral-8x22b"  # Alternative for creative tasks
-  
+
   fallback_mapping:
     "anthropic/claude-4-sonnet": "anthropic/claude-3.5-sonnet"
     "openai/gpt-o3": "openai/gpt-4o"

@@ -17,7 +17,7 @@ with freelancer_projects as (
         p.end_date,
         p.created_at
     from {{ ref('stg_freelancers') }} f
-    left join {{ ref('stg_projects') }} p 
+    left join {{ ref('stg_projects') }} p
         on f.freelancer_id = p.freelancer_id
 ),
 

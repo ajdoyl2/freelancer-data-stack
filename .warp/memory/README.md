@@ -140,7 +140,7 @@ Concrete, factual information that doesn't change frequently.
 mr fact "User's working directory is /Users/ajdoyle/data-stack"
 ```
 
-### 2. **Pattern** 
+### 2. **Pattern**
 Behavioral patterns and workflows observed over time.
 ```bash
 mr pattern "User typically runs tests after making code changes"

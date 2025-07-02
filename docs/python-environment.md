@@ -56,10 +56,10 @@ Automatically run code quality checks on commit:
    ```bash
    # Install dependencies
    poetry install --with dev
-   
+
    # Install pre-commit hooks
    poetry run pre-commit install
-   
+
    # Allow direnv
    direnv allow
    ```
@@ -68,10 +68,10 @@ Automatically run code quality checks on commit:
    ```bash
    # Add a new dependency
    poetry add requests
-   
+
    # Add a development dependency
    poetry add --group dev pytest
-   
+
    # Update requirements files
    ./scripts/update-requirements.sh
    ```
@@ -82,12 +82,12 @@ Automatically run code quality checks on commit:
    ruff check .
    black --check .
    isort --check-only .
-   
+
    # Format code
    ruff format .
    black .
    isort .
-   
+
    # Run pre-commit on all files
    pre-commit run --all-files
    ```

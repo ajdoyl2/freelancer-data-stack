@@ -36,7 +36,7 @@ You are reviewing code for the freelancer data stack project. Focus on maintaina
 - [ ] **Import organization** - Check for proper grouping and ordering (stdlib, third-party, local)
 - [ ] **Code organization** - Logical structure, appropriate class/function decomposition
 
-#### Logic & Functionality  
+#### Logic & Functionality
 - [ ] **Correctness** - Does the code do what it's supposed to do?
 - [ ] **Edge cases** - Are boundary conditions and error scenarios handled?
 - [ ] **Data validation** - Input validation and sanitization where appropriate
@@ -181,7 +181,7 @@ def process_customer_data(data):
 ```markdown
 ## Executive Summary
 Code Quality Score: 4/10
-This function has basic functionality but lacks error handling, type hints, 
+This function has basic functionality but lacks error handling, type hints,
 documentation, and efficient data processing patterns.
 
 ## Critical Issues
@@ -203,19 +203,19 @@ from typing import List, Dict, Any
 
 def process_customer_data(data: List[Dict[str, Any]]) -> List[Dict[str, str]]:
     """Process customer data to identify high-value customers.
-    
+
     Args:
         data: List of customer dictionaries with 'customer_id' and 'revenue'
-        
+
     Returns:
         List of high-value customer records
-        
+
     Raises:
         ValueError: If required keys are missing from customer data
     """
     if not isinstance(data, list):
         raise ValueError("Input data must be a list")
-    
+
     results = []
     for item in data:
         try:
@@ -226,7 +226,7 @@ def process_customer_data(data: List[Dict[str, Any]]) -> List[Dict[str, str]]:
                 })
         except KeyError as e:
             raise ValueError(f"Missing required key in customer data: {e}")
-    
+
     return results
 ```
 ```

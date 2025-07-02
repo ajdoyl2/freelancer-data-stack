@@ -5,7 +5,7 @@
 This dashboard provides an overview of data quality checks and validation results from Great Expectations.
 
 ```sql validation_results
-SELECT 
+SELECT
     expectation_suite_name,
     run_name,
     run_time,
@@ -14,16 +14,16 @@ SELECT
     statistics_successful_expectations,
     statistics_unsuccessful_expectations,
     statistics_success_percent
-FROM great_expectations.validations 
-ORDER BY run_time DESC 
+FROM great_expectations.validations
+ORDER BY run_time DESC
 LIMIT 50;
 ```
 
 ### Validation Success Rate Over Time
 
-<LineChart 
-    data={validation_results} 
-    x=run_time 
+<LineChart
+    data={validation_results}
+    x=run_time
     y=statistics_success_percent
     series=expectation_suite_name
     title="Data Quality Success Rate Over Time"
@@ -31,7 +31,7 @@ LIMIT 50;
 
 ### Recent Validation Summary
 
-<DataTable 
+<DataTable
     data={validation_results}
     rows=10
     search=true
@@ -41,7 +41,7 @@ LIMIT 50;
 ## Data Quality Metrics
 
 ```sql quality_metrics
-SELECT 
+SELECT
     expectation_suite_name,
     COUNT(*) as total_runs,
     AVG(statistics_success_percent) as avg_success_rate,
@@ -49,23 +49,23 @@ SELECT
     MAX(statistics_success_percent) as max_success_rate,
     COUNT(CASE WHEN success = true THEN 1 END) as successful_runs,
     COUNT(CASE WHEN success = false THEN 1 END) as failed_runs
-FROM great_expectations.validations 
+FROM great_expectations.validations
 GROUP BY expectation_suite_name
 ORDER BY avg_success_rate DESC;
 ```
 
 ### Quality Metrics by Suite
 
-<BarChart 
-    data={quality_metrics} 
-    x=expectation_suite_name 
+<BarChart
+    data={quality_metrics}
+    x=expectation_suite_name
     y=avg_success_rate
     title="Average Success Rate by Expectation Suite"
 />
 
 ### Suite Performance Summary
 
-<DataTable 
+<DataTable
     data={quality_metrics}
     search=true
     sort=true
@@ -74,7 +74,7 @@ ORDER BY avg_success_rate DESC;
 ## Failed Expectations Details
 
 ```sql failed_expectations
-SELECT 
+SELECT
     expectation_suite_name,
     run_name,
     run_time,
@@ -83,7 +83,7 @@ SELECT
     result_element_count,
     result_missing_count,
     result_unexpected_count
-FROM great_expectations.validation_results 
+FROM great_expectations.validation_results
 WHERE success = false
 ORDER BY run_time DESC
 LIMIT 100;
@@ -91,7 +91,7 @@ LIMIT 100;
 
 ### Recent Failures
 
-<DataTable 
+<DataTable
     data={failed_expectations}
     rows=20
     search=true

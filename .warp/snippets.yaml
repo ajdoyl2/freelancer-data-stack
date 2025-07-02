@@ -13,14 +13,14 @@ snippets:
         suggestions: ["coding", "data", "debugging", "testing", "deployment", "documentation", "architecture", "analysis"]
       prompt_name:
         description: "Prompt filename without .md"
-        
+
   - name: "prompt_search"
     description: "Search prompts by keyword"
     command: "grep -r '{{keyword}}' prompts/ --include='*.md'"
     parameters:
       keyword:
         description: "Search term"
-        
+
   - name: "prompt_list"
     description: "List all prompts in a category"
     command: "ls prompts/{{category}}/*.md"
@@ -33,15 +33,15 @@ snippets:
   - name: "code_review"
     description: "Open comprehensive code review prompt"
     command: "cat prompts/coding/code_review.md"
-    
+
   - name: "pipeline_design"
     description: "Open data pipeline design prompt"
     command: "cat prompts/data/pipeline_design.md"
-    
+
   - name: "debug_error"
     description: "Open error analysis debugging prompt"
     command: "cat prompts/debugging/error_analysis.md"
-    
+
   - name: "production_issue"
     description: "Emergency production issue troubleshooting"
     command: "cat prompts/debugging/production_issues.md"

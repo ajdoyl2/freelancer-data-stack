@@ -23,7 +23,7 @@ macros:
       - echo ""
       - echo "🎯 Agent Development Session Ready!"
       - echo "💡 Available workflows: agent_test_suite, dev_environment, agent_pr_loop"
-      
+
   - name: "agent_coding_session"
     description: "Initialize coding session with quality checks"
     commands:
@@ -41,7 +41,7 @@ macros:
       - echo "  - mypy (typing): poetry run mypy ."
       - echo ""
       - echo "🎯 Ready for coding! Use 'qf' alias for quick formatting."
-      
+
   - name: "agent_test_session"
     description: "Initialize comprehensive testing session"
     commands:
@@ -60,7 +60,7 @@ macros:
       - echo ""
       - echo "📊 Quick test: 'qt' alias"
       - echo "🎯 Test session ready!"
-      
+
   - name: "agent_deploy_session"
     description: "Initialize deployment and PR session"
     commands:
@@ -83,7 +83,7 @@ macros:
       - echo "  - Create PR: Use agent_pr_loop workflow"
       - echo "  - Quick commit: Use git_commit_with_type template"
       - echo "🎯 Deploy session ready!"
-      
+
   - name: "agent_debug_session"
     description: "Initialize debugging session with diagnostic tools"
     commands:
@@ -108,7 +108,7 @@ macros:
           conn.close()
       except:
           print('❌ PostgreSQL: Connection failed')
-      
+
       try:
           import redis
           r = redis.Redis(host='localhost', port=6379, db=0)
@@ -122,7 +122,7 @@ macros:
       - echo "  Docker logs: docker-compose logs --tail=20"
       - echo "  App logs: find logs/ -name '*.log' -exec tail -5 {} \;"
       - echo "🎯 Debug session ready!"
-      
+
   - name: "agent_cleanup_session"
     description: "Cleanup session for maintenance"
     commands:
@@ -151,7 +151,7 @@ interactive_prompts:
     description: "Interactive task selection for agent workflows"
     prompt: |
       🤖 AI Agent Task Selector
-      
+
       Select your task:
       1. 🧪 Run comprehensive tests
       2. 💻 Start coding session
@@ -159,7 +159,7 @@ interactive_prompts:
       4. 🐛 Debug issues
       5. 🧹 Cleanup and maintenance
       6. 📊 View project status
-      
+
       Choice (1-6):
     actions:
       "1": "agent_test_session"
@@ -168,18 +168,18 @@ interactive_prompts:
       "4": "agent_debug_session"
       "5": "agent_cleanup_session"
       "6": "agent_dev_session"
-      
+
   - name: "agent_quality_gate"
     description: "Interactive quality gate for deployments"
     prompt: |
       🚦 Quality Gate Check
-      
+
       Before proceeding, verify:
       ✅ All tests pass
       ✅ Code is formatted and linted
       ✅ Documentation is updated
       ✅ No sensitive data exposed
-      
+
       Proceed with deployment? (y/n):
     actions:
       "y": "echo '🚀 Proceeding with deployment...' && source .warp/workflows/agent_pr_loop.yaml"
@@ -195,14 +195,14 @@ context_setters:
       AGENT_CURRENT_BRANCH: "$(git branch --show-current)"
       AGENT_PYTHON_VERSION: "$(python --version)"
       AGENT_POETRY_ENV: "$(poetry env info --path)"
-      
+
   - name: "set_dev_context"
     description: "Set up development context"
     variables:
       PYTHONPATH: "${PYTHONPATH}:$(pwd)"
       DAGSTER_HOME: "$(pwd)/orchestration/dagster"
       DBT_PROFILES_DIR: "$(pwd)/transformation/dbt/profiles"
-      
+
 shortcuts:
   # Quick session starters
   "ads": "agent_dev_session"

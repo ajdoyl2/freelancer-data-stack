@@ -1,6 +1,6 @@
 #!/bin/bash
 # Rule of Three Duplicate Code Checker - Local Runner
-# 
+#
 # Convenient wrapper script for running duplicate code analysis locally
 # Supports multiple output formats and configuration options
 
@@ -243,7 +243,7 @@ set -e
 if [[ "$CI_MODE" == true ]]; then
     # Also generate text report for artifacts
     python3 "$CHECKER_SCRIPT" "${ARGS[@]//--json/}" > "$REPORTS_DIR/duplication-report.txt" 2>/dev/null || true
-    
+
     if [[ "$QUIET" == false ]]; then
         echo -e "${BLUE}📊 Reports saved to:${NC}"
         echo "  - Text: $REPORTS_DIR/duplication-report.txt"

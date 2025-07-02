@@ -158,7 +158,7 @@ INSERT INTO great_expectations.validations (
     expectation_suite_name, run_name, run_time, success,
     statistics_validated_expectations, statistics_successful_expectations,
     statistics_unsuccessful_expectations, statistics_success_percent
-) VALUES 
+) VALUES
     ('freelancer_quality_suite', 'test-run-1', NOW() - INTERVAL '1 hour', true, 10, 10, 0, 100.00),
     ('freelancer_quality_suite', 'test-run-2', NOW() - INTERVAL '2 hours', true, 10, 9, 1, 90.00),
     ('freelancer_quality_suite', 'test-run-3', NOW() - INTERVAL '3 hours', false, 10, 7, 3, 70.00);

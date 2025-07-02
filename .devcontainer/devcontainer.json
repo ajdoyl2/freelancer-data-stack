@@ -53,4 +53,3 @@
     "postCreateCommand": "pip install --user dbt-core dbt-postgres dbt-snowflake sqlfluff dagster dagster-webserver great-expectations pandas numpy jupyter streamlit",
     "remoteUser": "vscode"
 }
-

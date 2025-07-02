@@ -56,7 +56,7 @@ This document provides the **definitive version matrix** for all components in t
 
 ### Critical Compatibility Pins:
 
-1. **uvicorn ≤ 0.24.0** 
+1. **uvicorn ≤ 0.24.0**
    - **Reason**: FastAPI <0.105 compatibility requirement
    - **Impact**: Temporary constraint until FastAPI upgrade path verified
    - **Alternative**: Upgrade FastAPI to 0.115+ and uvicorn to 0.35+
@@ -87,7 +87,7 @@ snowflake-connector-python = {version = "3.15.0", extras = ["pandas"]}
 packages:
   - package: dbt-labs/dbt_utils
     version: [">=1.0.0", "<2.0.0"]
-  - package: metaplane/dbt_expectations  
+  - package: metaplane/dbt_expectations
     version: [">=0.10.0", "<0.11.0"]
   - package: brooklyn-data/dbt_artifacts
     version: [">=2.6.0", "<3.0.0"]
@@ -148,7 +148,7 @@ Python 3.13 ⚠️ (Limited support, some packages pending)
 - [ ] Update acryl-datahub to 0.15.0.8
 - [ ] Test dagster group installation
 
-### Phase 2: Framework Updates  
+### Phase 2: Framework Updates
 - [ ] Update dbt-core to 1.10.2
 - [ ] Update dbt-duckdb to 1.10.2
 - [ ] Update streamlit to 1.46.1
@@ -189,6 +189,6 @@ Python 3.13 ⚠️ (Limited support, some packages pending)
 
 ---
 
-*Version Matrix finalized: January 2025*  
-*Next review: April 2025*  
+*Version Matrix finalized: January 2025*
+*Next review: April 2025*
 *Compatibility tested: Python 3.11-3.12, Linux/macOS*

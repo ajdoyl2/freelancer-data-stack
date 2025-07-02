@@ -7,15 +7,15 @@ source:
     # Dagster instance configuration
     host: ${DAGSTER_HOST:-localhost}
     port: ${DAGSTER_PORT:-3000}
-    
+
     # Optional authentication
     # api_key: ${DAGSTER_API_KEY}
-    
+
     # Asset filtering
     asset_name_pattern:
       allow:
         - ".*"  # Allow all assets
-      
+
     # Job filtering
     job_name_pattern:
       allow:
@@ -24,19 +24,19 @@ source:
         - "transformation_pipeline"
         - "data_quality_pipeline"
         - "release_triggered_pipeline"
-    
+
     # Metadata extraction configuration
     extract_owners: true
     extract_descriptions: true
     extract_tags: true
     extract_usage_statistics: true
-    
+
     # Lineage configuration
     extract_lineage: true
     lineage_job_name_pattern:
       allow:
         - ".*"
-    
+
     # Custom asset mappings
     asset_mappings:
       # Map Airbyte sync job to external data sources
@@ -48,7 +48,7 @@ source:
           - "ingestion"
           - "external"
           - "api"
-        
+
       # Map dlt ingestion pipeline
       dlt_ingestion_pipeline:
         platform: "dlt"
@@ -58,7 +58,7 @@ source:
           - "ingestion"
           - "pipeline"
           - "dlt"
-        
+
       # Map dbt transformations
       dbt_run:
         platform: "dbt"
@@ -68,7 +68,7 @@ source:
           - "transformation"
           - "dbt"
           - "sql"
-        
+
       # Map dbt tests
       dbt_test:
         platform: "dbt"
@@ -78,7 +78,7 @@ source:
           - "testing"
           - "quality"
           - "dbt"
-        
+
       # Map Great Expectations validation
       great_expectations_validation:
         platform: "great-expectations"
@@ -88,7 +88,7 @@ source:
           - "validation"
           - "quality"
           - "great-expectations"
-        
+
       # Map DataHub metadata ingestion
       datahub_metadata_ingestion:
         platform: "datahub"
@@ -105,7 +105,7 @@ sink:
   config:
     server: ${DATAHUB_GMS_URL:-http://localhost:8080}
     token: ${DATAHUB_GMS_TOKEN}
-    
+
     # Extra headers if needed
     # extra_headers:
     #   X-Custom-Header: value
@@ -118,12 +118,12 @@ transformers:
         created_by: "dagster-orchestration"
         environment: ${DAGSTER_ENV:-dev}
         data_stack: "freelancer-data-stack"
-        
+
   - type: pattern_add_dataset_schema_tags
     config:
       tag_pattern: "pii"
       schema_pattern: ".*_(email|phone|ssn|credit_card).*"
-      
+
   - type: pattern_add_dataset_domain
     config:
       domain_pattern:
@@ -143,20 +143,20 @@ reporting:
 options:
   # Include or exclude deleted entities
   include_soft_deleted_entities: false
-  
+
   # Batch size for ingestion
   batch_size: 1000
-  
+
   # Enable/disable specific extractors
   extract_ownership: true
   extract_containers: true
   extract_lineage: true
   extract_usage_statistics: true
-  
+
   # Custom metadata mappings
   custom_mapping:
     dagster_asset_groups:
       ingestion: "Data Ingestion"
-      transformation: "Data Transformation" 
+      transformation: "Data Transformation"
       quality: "Data Quality"
       catalog: "Data Catalog"

@@ -16,7 +16,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -174,15 +174,15 @@ jobs:
         script: |
           const fs = require('fs');
           const plan = fs.readFileSync('infra/terraform/tfplan.txt', 'utf8');
-          
+
           const output = `## Terraform Plan
-          
+
           \`\`\`
           ${plan}
           \`\`\`
-          
+
           *Plan generated for commit: ${context.sha}*`;
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
@@ -197,7 +197,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

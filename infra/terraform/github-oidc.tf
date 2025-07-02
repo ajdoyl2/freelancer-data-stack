@@ -6,13 +6,13 @@ data "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.environment == "prod" && length(data.aws_iam_openid_connect_provider.github) == 0 ? 1 : 0
-  
+
   url = "https://token.actions.githubusercontent.com"
-  
+
   client_id_list = [
     "sts.amazonaws.com",
   ]
-  
+
   thumbprint_list = [
     "6938fd4d98bab03faadb97b34396831e3780aea1",
     "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
@@ -37,8 +37,8 @@ resource "aws_iam_role" "github_oidc" {
         Effect = "Allow"
         Principal = {
           Federated = var.environment == "prod" ? (
-            length(data.aws_iam_openid_connect_provider.github) > 0 ? 
-            data.aws_iam_openid_connect_provider.github[0].arn : 
+            length(data.aws_iam_openid_connect_provider.github) > 0 ?
+            data.aws_iam_openid_connect_provider.github[0].arn :
             aws_iam_openid_connect_provider.github[0].arn
           ) : ""
         }

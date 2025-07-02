@@ -53,7 +53,7 @@ resource "helm_release" "mcp_server" {
   name       = "mcp-server"
   chart      = "./helm/mcp-server"
   namespace  = var.mcp_server_namespace
-  
+
   values = [
     file("${path.module}/helm/mcp-server/values.yaml")
   ]

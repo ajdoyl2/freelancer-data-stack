@@ -30,4 +30,3 @@ jobs:
     - name: Post Deployment Steps
       run: |
         echo "Application deployed successfully!"
-

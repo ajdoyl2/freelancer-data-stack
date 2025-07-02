@@ -44,7 +44,7 @@ snapshots:
 vars:
   # dbt_expectations configurations
   dbt_expectations_warn_if_not_tested: false
-  
+
   # Environment-specific vars
   start_date: '2023-01-01'
   end_date: '2024-12-31'
@@ -56,6 +56,6 @@ on-run-end:
 # Post-hooks for dbt_artifacts (disabled for DuckDB compatibility)
 # on-run-start:
 #   - "{{ dbt_artifacts.upload_results() }}"
-#   
+#
 # on-run-end:
 #   - "{{ dbt_artifacts.upload_results() }}"

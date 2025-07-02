@@ -37,7 +37,7 @@ locals {
       })
       recovery_window_in_days = 7
     }
-    
+
     "api-keys" = {
       description = "API keys for external services"
       secret_string = jsonencode({
@@ -46,7 +46,7 @@ locals {
       })
       recovery_window_in_days = 7
     }
-    
+
     "database-urls" = {
       description = "Database connection URLs"
       secret_string = jsonencode({

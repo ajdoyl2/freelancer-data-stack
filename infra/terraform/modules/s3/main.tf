@@ -22,7 +22,7 @@ resource "aws_s3_bucket" "buckets" {
 resource "aws_s3_bucket_versioning" "buckets" {
   for_each = aws_s3_bucket.buckets
   bucket   = each.value.id
-  
+
   versioning_configuration {
     status = var.enable_versioning ? "Enabled" : "Disabled"
   }

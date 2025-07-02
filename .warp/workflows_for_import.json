@@ -14,7 +14,7 @@
     "arguments": []
   },
   {
-    "name": "AI Debug Assistant", 
+    "name": "AI Debug Assistant",
     "description": "Systematic error analysis and troubleshooting for data stack issues",
     "command": "echo 'Help me debug this issue systematically:\n\n1. Initial Analysis:\n   - Understand the error context and symptoms\n   - Identify the component (Dagster, dbt, DuckDB, Docker, etc.)\n   - Determine the data flow impact\n\n2. Investigation Steps:\n   - Check logs and error messages\n   - Verify service health (Docker, databases)\n   - Test connectivity and dependencies\n   - Review recent changes\n\n3. Data Stack Specific Checks:\n   - Dagster asset status and dependencies\n   - dbt model compilation and execution\n   - Database connections and queries\n   - Docker service status\n\n4. Resolution Strategy:\n   - Provide specific troubleshooting steps\n   - Suggest immediate fixes and long-term solutions\n   - Include prevention measures\n   - Recommend monitoring improvements\n\nPlease provide actionable steps with specific commands where applicable.'",
     "tags": ["ai", "debugging", "troubleshooting", "dagster", "dbt", "docker"],

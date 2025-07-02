@@ -47,7 +47,7 @@ Please use the prompt from prompts/coding/refactor_function.md to improve this c
 - **API Design**: RESTful API development guidelines
 - **Database Schema**: Data modeling best practices
 
-### 🏗️ Architecture Prompts  
+### 🏗️ Architecture Prompts
 - **System Design**: High-level architecture planning
 - **Microservices**: Service decomposition strategies
 - **Data Architecture**: Pipeline and warehouse design
@@ -127,7 +127,7 @@ Each prompt includes:
 Use multiple prompts in sequence for complex tasks:
 ```
 1. prompts/architecture/system_design.md
-2. prompts/coding/api_design.md  
+2. prompts/coding/api_design.md
 3. prompts/testing/integration_tests.md
 4. prompts/deployment/production_setup.md
 ```
@@ -135,14 +135,14 @@ Use multiple prompts in sequence for complex tasks:
 ### 2. Contextual Prompt Chaining
 Reference previous outputs in follow-up prompts:
 ```
-"Using the architecture from the previous response, now apply 
+"Using the architecture from the previous response, now apply
 prompts/coding/implement_service.md to create the user service..."
 ```
 
 ### 3. Prompt Customization
 Adapt prompts for specific scenarios:
 ```
-"Use prompts/data/etl_design.md but focus specifically on 
+"Use prompts/data/etl_design.md but focus specifically on
 real-time streaming data from Kafka..."
 ```
 

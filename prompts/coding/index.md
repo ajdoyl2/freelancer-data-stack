@@ -33,7 +33,7 @@
 # View a specific prompt
 cat prompts/coding/code_review.md
 
-# Search for prompts by keyword  
+# Search for prompts by keyword
 grep -r "API" prompts/coding/
 
 # List all coding prompts
@@ -45,7 +45,7 @@ ls prompts/coding/*.md
 ### 1. Code Review Workflow
 ```
 1. code_review.md - Initial analysis
-2. refactor_function.md - Targeted improvements  
+2. refactor_function.md - Targeted improvements
 3. error_handling.md - Robustness improvements
 ```
 

@@ -11,13 +11,13 @@ commands:
       echo "⏳ Waiting for services to be ready..."
       sleep 10
       docker-compose ps
-      
+
   - name: "stop_services"
     description: "Stop all Docker services"
     command: |
       echo "🛑 Stopping development services..."
       docker-compose down
-      
+
   - name: "restart_services"
     description: "Restart all Docker services"
     command: |
@@ -26,25 +26,25 @@ commands:
       docker-compose up -d postgres redis
       sleep 10
       docker-compose ps
-      
+
   - name: "setup_env"
     description: "Initialize development environment"
     command: |
       echo "🔧 Setting up development environment..."
       # Install Poetry dependencies
       poetry install --with dev,test,dagster,streamlit,mcp-server
-      
+
       # Create necessary directories
       mkdir -p data/raw data/processed data/output
       mkdir -p logs reports
-      
+
       # Copy example env files if they don't exist
       if [ ! -f .env ]; then
         cp .env.example .env 2>/dev/null || echo "# Environment variables" > .env
       fi
-      
+
       echo "✅ Development environment ready!"
-      
+
   - name: "reset_env"
     description: "Reset development environment (WARNING: destructive)"
     command: |
@@ -58,16 +58,16 @@ commands:
       else
         echo "❌ Reset cancelled"
       fi
-      
+
   - name: "check_health"
     description: "Check health of all services"
     command: |
       echo "🩺 Checking service health..."
-      
+
       # Check Docker services
       echo "📦 Docker services:"
       docker-compose ps
-      
+
       # Check PostgreSQL connection
       echo "🐘 PostgreSQL connection:"
       poetry run python -c "
@@ -79,7 +79,7 @@ commands:
       except Exception as e:
           print(f'❌ PostgreSQL: {e}')
       "
-      
+
       # Check Redis connection
       echo "🔴 Redis connection:"
       poetry run python -c "
@@ -91,13 +91,13 @@ commands:
       except Exception as e:
           print(f'❌ Redis: {e}')
       "
-      
+
   - name: "view_logs"
     description: "View service logs"
     command: |
       echo "📋 Service logs:"
       docker-compose logs --tail=50 -f
-      
+
   - name: "clean_cache"
     description: "Clean development caches and temporary files"
     command: |
@@ -105,16 +105,16 @@ commands:
       # Python cache
       find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
       find . -name "*.pyc" -delete 2>/dev/null || true
-      
+
       # Poetry cache
       poetry cache clear --all pypi
-      
+
       # dbt cache
       rm -rf transformation/dbt/dbt_packages transformation/dbt/logs transformation/dbt/target
-      
+
       # Dagster cache
       rm -rf orchestration/dagster/tmp orchestration/dagster/storage
-      
+
       echo "✅ Cache cleaned"
 
 workflow_templates:
@@ -124,13 +124,13 @@ workflow_templates:
       - setup_env
       - start_services
       - check_health
-      
+
   quick_restart:
     description: "Quick restart of services"
     steps:
       - restart_services
       - check_health
-      
+
   maintenance:
     description: "Environment maintenance"
     steps:

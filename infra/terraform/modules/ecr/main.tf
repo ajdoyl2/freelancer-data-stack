@@ -1,7 +1,7 @@
 # ECR Repositories
 resource "aws_ecr_repository" "repositories" {
   for_each = toset(var.repositories)
-  
+
   name                 = "${var.project_name}-${each.key}-${var.environment}"
   image_tag_mutability = "MUTABLE"
 
@@ -24,7 +24,7 @@ resource "aws_ecr_repository" "repositories" {
 # ECR Lifecycle Policy
 resource "aws_ecr_lifecycle_policy" "repositories" {
   for_each = aws_ecr_repository.repositories
-  
+
   repository = each.value.name
 
   policy = jsonencode({
@@ -61,7 +61,7 @@ resource "aws_ecr_lifecycle_policy" "repositories" {
 # ECR Repository Policy for cross-account access (if needed)
 resource "aws_ecr_repository_policy" "repositories" {
   for_each = var.allowed_principals != null && length(var.allowed_principals) > 0 ? aws_ecr_repository.repositories : {}
-  
+
   repository = each.value.name
 
   policy = jsonencode({

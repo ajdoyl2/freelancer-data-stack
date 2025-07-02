@@ -260,7 +260,7 @@ Business Requirement:
 # Customer Analytics Pipeline Design
 
 ## Executive Summary
-This pipeline ingests customer data from Salesforce, calculates key metrics 
+This pipeline ingests customer data from Salesforce, calculates key metrics
 including lifetime value, and serves analytics to the sales team dashboard.
 
 ## Architecture Overview

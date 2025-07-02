@@ -220,19 +220,19 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ secrets.AWS_REGION }}
-    
+
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
-    
+
     - name: Build and push Docker image
       run: |
         docker build -t ${{ secrets.ECR_REGISTRY }}/freelancer-data-stack-api-prod:latest .

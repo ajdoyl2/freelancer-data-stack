@@ -46,9 +46,9 @@ After completing any task, verify:
 1. **Conventional Commits**: Follow the format:
    ```
    <type>(<scope>): <description>
-   
+
    [optional body]
-   
+
    [optional footer(s)]
    ```
 
@@ -64,12 +64,12 @@ After completing any task, verify:
 3. **Examples**:
    ```
    feat(python): add pyenv and poetry environment management
-   
+
    - Install Python 3.11.13 via pyenv
    - Configure Poetry with dependency groups
    - Set up pre-commit hooks for code quality
    - Create requirements files for Docker compatibility
-   
+
    Closes #123
    ```
 
@@ -86,7 +86,7 @@ After completing any task, verify:
    # Make changes
    git add .
    git commit -m "feat(scope): descriptive commit message"
-   
+
    # Push regularly
    git push origin feature/descriptive-name
    ```
@@ -95,10 +95,10 @@ After completing any task, verify:
    ```bash
    # Ensure code quality
    pre-commit run --all-files
-   
+
    # Run tests if applicable
    pytest tests/
-   
+
    # Verify functionality
    ./scripts/verify-setup.sh
    ```

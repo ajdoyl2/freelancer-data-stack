@@ -19,7 +19,7 @@
       "command": "echo '🧪 Running unit tests...' && poetry run pytest tests/unit/ -v --tb=short --color=yes || echo 'Unit tests completed'"
     },
     {
-      "name": "Run Integration Tests", 
+      "name": "Run Integration Tests",
       "command": "echo '🔗 Running integration tests...' && poetry run pytest tests/integration/ -v --tb=short --color=yes || echo 'Integration tests completed'"
     },
     {

@@ -4,7 +4,7 @@ This directory contains the complete configuration for the visualization layer o
 
 ## ✅ Configuration Complete
 
-### 🦆 Evidence.dev 
+### 🦆 Evidence.dev
 **Status: Configured for DuckDB and Snowflake**
 
 - **DuckDB Connection**: Pointing to `/data/main.db` with sample project data
@@ -14,7 +14,7 @@ This directory contains the complete configuration for the visualization layer o
   - `snowflake-analytics.md` - Snowflake analytics dashboard
   - `data-quality.md` - Data quality monitoring dashboard
 - **Access**: http://localhost:3001
-- **Volume Mounts**: 
+- **Volume Mounts**:
   - `./viz/evidence:/app` (Evidence pages and configuration)
   - `${HOME}/data-stack/volumes/duckdb:/data` (DuckDB access)
 
@@ -46,10 +46,10 @@ This directory contains the complete configuration for the visualization layer o
   ```bash
   # Original command (backward compatibility)
   streamlit run notebooks/app.py
-  
+
   # Direct command
   streamlit run viz/streamlit/app.py
-  
+
   # Using helper script
   ./viz/streamlit/run.sh
   ```
@@ -82,7 +82,7 @@ This directory contains the complete configuration for the visualization layer o
 
 2. **Access visualization tools**:
    - Evidence.dev: http://localhost:3001
-   - Metabase: http://localhost:3002  
+   - Metabase: http://localhost:3002
    - Streamlit: http://localhost:8501
    - Jupyter (legacy): http://localhost:8888
 
@@ -116,7 +116,7 @@ viz/
 
 All database credentials are loaded from `.env` file:
 - `SNOWFLAKE_ACCOUNT`
-- `SNOWFLAKE_USERNAME` 
+- `SNOWFLAKE_USERNAME`
 - `SNOWFLAKE_PASSWORD`
 - `SNOWFLAKE_ROLE`
 - `SNOWFLAKE_WAREHOUSE`

@@ -53,7 +53,7 @@ ecs_task_definitions = {
       API_KEY = "arn:aws:secretsmanager:ca-central-1:your-account:secret:freelancer-data-stack/prod/api-keys"
     }
   }
-  
+
   transformation = {
     cpu    = 1024
     memory = 2048
@@ -66,7 +66,7 @@ ecs_task_definitions = {
       SNOWFLAKE_PASSWORD = "arn:aws:secretsmanager:ca-central-1:your-account:secret:freelancer-data-stack/prod/snowflake-credentials"
     }
   }
-  
+
   orchestration = {
     cpu    = 512
     memory = 1024
@@ -79,7 +79,7 @@ ecs_task_definitions = {
       SNOWFLAKE_PASSWORD = "arn:aws:secretsmanager:ca-central-1:your-account:secret:freelancer-data-stack/prod/snowflake-credentials"
     }
   }
-  
+
   api = {
     cpu    = 512
     memory = 1024
@@ -103,7 +103,7 @@ ecs_service_configurations = {
     min_capacity = 1
     max_capacity = 5
   }
-  
+
   transformation = {
     desired_count = 1
     task_definition_name = "transformation"
@@ -111,7 +111,7 @@ ecs_service_configurations = {
     min_capacity = 1
     max_capacity = 3
   }
-  
+
   orchestration = {
     desired_count = 1
     task_definition_name = "orchestration"
@@ -119,7 +119,7 @@ ecs_service_configurations = {
     min_capacity = 1
     max_capacity = 2
   }
-  
+
   api = {
     desired_count = 2
     task_definition_name = "api"

@@ -10,7 +10,7 @@ load_from:
 # Storage configuration
 storage:
   postgres:
-    postgres_url: 
+    postgres_url:
       env: DAGSTER_POSTGRES_URL
   # Alternative: SQLite for development
   # sqlite:
@@ -21,7 +21,7 @@ compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: 
+    bucket:
       env: DAGSTER_COMPUTE_LOGS_BUCKET
     prefix: compute-logs
   # Alternative: Local storage for development
