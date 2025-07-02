@@ -1,0 +1,139 @@
+# Rule of Three Duplicate Code Checker Configuration
+
+# Analysis settings
+analysis:
+  # Minimum similarity threshold (0.0-1.0)
+  min_similarity: 0.8
+  
+  # Minimum lines of code to consider for analysis
+  min_lines: 5
+  
+  # Maximum impact score before failing CI (0.0-10.0)
+  max_impact_threshold: 5.0
+  
+  # Enable strict mode (fail on any duplication)
+  strict_mode: false
+
+# File and directory exclusions
+exclude_patterns:
+  # Test files and directories
+  - "test_"
+  - "tests/"
+  - "*_test.py"
+  - "conftest.py"
+  
+  # Build and cache directories
+  - "__pycache__"
+  - ".pyc"
+  - "build/"
+  - "dist/"
+  - ".egg-info"
+  
+  # Migration and generated files
+  - "migrations/"
+  - "alembic/versions/"
+  - "_pb2.py"
+  - "_pb2_grpc.py"
+  
+  # Vendor and third-party code
+  - "vendor/"
+  - "third_party/"
+  - "node_modules/"
+  
+  # Configuration and data files
+  - "config/"
+  - "configs/"
+  - "data/"
+  - "fixtures/"
+  
+  # Documentation
+  - "docs/"
+  - "documentation/"
+
+# Project-specific settings
+project:
+  # Root directories to analyze
+  source_directories:
+    - "src/"
+    - "orchestration/"
+    - "transformation/"
+    - "viz/"
+    - "mcp-server/"
+    - "tools/"
+  
+  # Exclude specific files
+  exclude_files:
+    - "setup.py"
+    - "manage.py"
+    - "__init__.py"
+  
+  # Language-specific settings
+  languages:
+    python:
+      # Ignore simple getter/setter patterns
+      ignore_simple_accessors: true
+      
+      # Ignore property definitions
+      ignore_properties: true
+      
+      # Minimum complexity for functions
+      min_function_complexity: 3
+
+# Reporting settings
+reporting:
+  # Output format (text, json, markdown)
+  default_format: "text"
+  
+  # Include code samples in report
+  include_samples: true
+  
+  # Maximum lines to show in samples
+  max_sample_lines: 10
+  
+  # Show similarity details
+  show_similarity_details: true
+  
+  # Generate HTML report
+  generate_html: false
+
+# CI/CD integration
+ci_integration:
+  # Fail build on high-impact duplications
+  fail_on_high_impact: true
+  
+  # Fail build on any duplications
+  fail_on_any_duplication: false
+  
+  # Create GitHub annotations
+  github_annotations: true
+  
+  # Post results as PR comment
+  pr_comment: true
+  
+  # Artifact paths
+  artifacts:
+    report_path: "reports/duplication-report.txt"
+    json_path: "reports/duplication-report.json"
+    html_path: "reports/duplication-report.html"
+
+# Refactoring suggestions
+refactoring:
+  # Suggest specific refactoring patterns
+  suggest_patterns: true
+  
+  # Include code examples in suggestions
+  include_examples: true
+  
+  # Common refactoring templates
+  templates:
+    function_extraction:
+      description: "Extract common logic into utility function"
+      pattern: "utilities/"
+      
+    class_inheritance:
+      description: "Use inheritance or composition"
+      pattern: "base classes or mixins"
+      
+    configuration:
+      description: "Move to configuration"
+      pattern: "config files or constants"

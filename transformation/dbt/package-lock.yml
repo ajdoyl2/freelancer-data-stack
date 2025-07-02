@@ -1,0 +1,10 @@
+packages:
+  - package: metaplane/dbt_expectations
+    version: 0.10.9
+  - package: brooklyn-data/dbt_artifacts
+    version: 2.9.3
+  - package: dbt-labs/dbt_utils
+    version: 1.3.0
+  - package: godatadriven/dbt_date
+    version: 0.14.2
+sha1_hash: 9172292c399ec9375dbb44ebcd26c147661d3455

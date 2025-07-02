@@ -1,0 +1,183 @@
+name: "Development Commands"
+description: "Common development command templates"
+version: "1.0.0"
+
+templates:
+  - name: "poetry_install_with_groups"
+    description: "Install Poetry dependencies with specific groups"
+    template: "poetry install --with {{groups}}"
+    placeholders:
+      groups:
+        description: "Comma-separated list of dependency groups (dev,test,dagster,streamlit,mcp-server)"
+        default: "dev,test"
+        suggestions: ["dev,test", "dagster", "streamlit", "mcp-server", "dev,test,dagster", "all"]
+        
+  - name: "pytest_with_options"
+    description: "Run pytest with common options"
+    template: "poetry run pytest {{path}} {{options}}"
+    placeholders:
+      path:
+        description: "Path to test files or directory"
+        default: "tests/"
+        suggestions: ["tests/", "tests/unit/", "tests/integration/", "orchestration/dagster/test_dagster.py"]
+      options:
+        description: "Pytest options"
+        default: "-v --tb=short"
+        suggestions: ["-v --tb=short", "-x -v", "--cov=. --cov-report=html", "--html=reports/test_report.html"]
+        
+  - name: "docker_compose_service"
+    description: "Docker compose operations on specific services"
+    template: "docker-compose {{action}} {{services}}"
+    placeholders:
+      action:
+        description: "Docker compose action"
+        default: "up -d"
+        suggestions: ["up -d", "down", "restart", "logs", "ps", "exec"]
+      services:
+        description: "Service names (space-separated)"
+        default: "postgres redis"
+        suggestions: ["postgres", "redis", "postgres redis", "dagster", "streamlit"]
+        
+  - name: "git_commit_with_type"
+    description: "Git commit with conventional commit format"
+    template: "git add . && git commit -m \"{{type}}{{scope}}: {{description}}\""
+    placeholders:
+      type:
+        description: "Commit type"
+        default: "feat"
+        suggestions: ["feat", "fix", "docs", "style", "refactor", "test", "chore"]
+      scope:
+        description: "Commit scope (optional, include parentheses)"
+        default: ""
+        suggestions: ["(dagster)", "(dbt)", "(streamlit)", "(docker)", "(deps)", "(ci)", "(docs)"]
+      description:
+        description: "Commit description"
+        default: "automated improvements"
+        
+  - name: "dbt_run_with_options"
+    description: "Run dbt with common options"
+    template: "cd transformation/dbt && poetry run dbt {{command}} {{options}}"
+    placeholders:
+      command:
+        description: "dbt command"
+        default: "run"
+        suggestions: ["run", "test", "compile", "parse", "docs generate", "debug", "deps"]
+      options:
+        description: "dbt options"
+        default: "--profiles-dir profiles"
+        suggestions: ["--profiles-dir profiles", "--select {{model}}", "--full-refresh", "--vars '{\"key\": \"value\"}'"]
+        
+  - name: "dagster_dev_server"
+    description: "Start Dagster development server"
+    template: "cd orchestration/dagster && poetry run dagster dev {{options}}"
+    placeholders:
+      options:
+        description: "Dagster dev options"
+        default: "--host 0.0.0.0 --port 3000"
+        suggestions: ["--host 0.0.0.0 --port 3000", "--host localhost --port 3000", "--port 3001"]
+        
+  - name: "streamlit_app"
+    description: "Run Streamlit application"
+    template: "cd viz/streamlit && poetry run streamlit run {{app}} {{options}}"
+    placeholders:
+      app:
+        description: "Streamlit app file"
+        default: "app.py"
+        suggestions: ["app.py", "main.py", "dashboard.py"]
+      options:
+        description: "Streamlit options"
+        default: "--server.port 8501"
+        suggestions: ["--server.port 8501", "--server.port 8502", "--server.headless true"]
+        
+  - name: "code_quality_check"
+    description: "Run code quality tools"
+    template: "poetry run {{tool}} {{options}} {{path}}"
+    placeholders:
+      tool:
+        description: "Code quality tool"
+        default: "ruff"
+        suggestions: ["ruff check", "black", "isort", "mypy", "bandit"]
+      options:
+        description: "Tool options"
+        default: "--fix"
+        suggestions: ["--fix", "--check", "--diff", "--verbose", "-r"]
+      path:
+        description: "Path to check"
+        default: "."
+        suggestions: [".", "src/", "tests/", "orchestration/", "transformation/"]
+        
+  - name: "env_var_export"
+    description: "Export environment variable"
+    template: "export {{var_name}}={{var_value}}"
+    placeholders:
+      var_name:
+        description: "Environment variable name"
+        default: "PYTHONPATH"
+        suggestions: ["PYTHONPATH", "DAGSTER_HOME", "DBT_PROFILES_DIR", "DATABASE_URL", "REDIS_URL"]
+      var_value:
+        description: "Environment variable value"
+        default: "${PYTHONPATH}:$(pwd)"
+        
+  - name: "find_files_by_pattern"
+    description: "Find files matching pattern"
+    template: "find {{path}} -name \"{{pattern}}\" {{options}}"
+    placeholders:
+      path:
+        description: "Search path"
+        default: "."
+        suggestions: [".", "src/", "tests/", "orchestration/", "transformation/"]
+      pattern:
+        description: "File pattern"
+        default: "*.py"
+        suggestions: ["*.py", "*.yaml", "*.yml", "*.json", "*.sql", "*.md", "*.txt"]
+      options:
+        description: "Find options"
+        default: "-type f"
+        suggestions: ["-type f", "-type d", "-maxdepth 2", "-name", "-iname"]
+        
+  - name: "grep_in_files"
+    description: "Search for text in files"
+    template: "grep -r {{options}} \"{{pattern}}\" {{path}}"
+    placeholders:
+      pattern:
+        description: "Search pattern"
+        default: "TODO"
+        suggestions: ["TODO", "FIXME", "def ", "class ", "import ", "from "]
+      path:
+        description: "Search path"
+        default: "."
+        suggestions: [".", "src/", "tests/", "orchestration/", "transformation/"]
+      options:
+        description: "Grep options"
+        default: "-n --color=auto"
+        suggestions: ["-n --color=auto", "-i -n", "-l", "-c", "--exclude-dir=__pycache__"]
+
+aliases:
+  # Quick shortcuts for common tasks
+  - alias: "qi"
+    command: "poetry install --with dev,test"
+    description: "Quick install with dev dependencies"
+    
+  - alias: "qr"
+    command: "poetry run"
+    description: "Quick poetry run prefix"
+    
+  - alias: "qt"
+    command: "poetry run pytest tests/ -v --tb=short"
+    description: "Quick test run"
+    
+  - alias: "qf"
+    command: "poetry run ruff check . --fix && poetry run black . && poetry run isort ."
+    description: "Quick format and lint"
+    
+  - alias: "qs"
+    command: "docker-compose up -d postgres redis"
+    description: "Quick start services"
+    
+  - alias: "qd"
+    command: "docker-compose down"
+    description: "Quick stop services"
+    
+  - alias: "qc"
+    command: "find . -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true"
+    description: "Quick cache clean"

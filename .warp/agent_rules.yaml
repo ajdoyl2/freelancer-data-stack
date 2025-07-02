@@ -1,0 +1,215 @@
+# Warp AI Agent Model Routing Configuration
+# Explicit model routing based on task categories and conditions
+# Updated for July 2025 with current model availability
+
+model_routing:
+  # Planning & Coordination Tasks
+  planning_coordination:
+    primary: "openai/gpt-o3"
+    fallbacks:
+      - "anthropic/claude-4-sonnet"
+      - "google/gemini-2.5-pro"
+    conditions:
+      - task_type: ["planning", "coordination", "project_management", "architecture_design"]
+      - complexity: ["low", "medium"]
+
+  # Code-Centric Tasks - Tiered approach
+  code_centric:
+    # Fast tier - Standard coding tasks
+    fast:
+      primary: "anthropic/claude-4-sonnet"
+      conditions:
+        - changed_lines: "<250"
+        - complexity: ["low", "medium"]
+        - error_retries: "<2"
+        - task_type: ["coding", "debugging", "refactoring", "code_review"]
+      
+    # High accuracy tier - Complex coding tasks
+    high_accuracy:
+      primary: "anthropic/claude-3-opus"
+      conditions:
+        - changed_lines: ">=250"
+        - systems: ["critical", "production"]
+        - complexity: ["high", "critical"]
+        - task_type: ["architecture", "performance_optimization", "security_implementation"]
+      
+    # Fallback tier - Error recovery and multimodal
+    fallback:
+      primary: "google/gemini-2.5-pro"
+      conditions:
+        - error_retries: ">2"
+        - multimodal: true
+        - task_type: ["image_analysis", "diagram_generation", "error_recovery"]
+
+  # Creative/Exploratory Tasks
+  creative_exploratory:
+    primary: "google/gemini-2.5-pro"
+    alternatives:
+      - "anthropic/claude-3-opus"
+      - "mistral/mixtral-8x22b"
+    conditions:
+      - task_type: ["creative", "exploratory", "research", "brainstorming", "documentation"]
+      - complexity: ["medium", "high"]
+
+# Routing Rules and Preferences
+routing_preferences:
+  # Explicit preference for Claude 4 Sonnet for standard coding
+  standard_coding_preference: "anthropic/claude-4-sonnet"
+  
+  # Escalation to Opus for complex tasks
+  complex_task_escalation:
+    trigger_conditions:
+      - changed_lines: ">=250"
+      - complexity: ["high", "critical"]
+      - systems: ["critical", "production"]
+    target_model: "anthropic/claude-3-opus"
+  
+  # Reserve Gemini for fallback or creative usage
+  gemini_usage:
+    primary_use_cases: ["fallback", "creative", "multimodal"]
+    fallback_triggers:
+      - error_retries: ">2"
+      - multimodal_required: true
+  
+  # Complexity-based routing with line thresholds
+  complexity_thresholds:
+    simple: "<100 lines"
+    medium: "100-250 lines"
+    complex: ">250 lines"
+  
+  # Isolate multimodal capabilities
+  multimodal_isolation:
+    dedicated_model: "google/gemini-2.5-pro"
+    task_types: ["image_analysis", "diagram_generation", "visual_debugging"]
+
+# Task Classification
+task_classification:
+  planning_coordination:
+    - "planning"
+    - "coordination"
+    - "project_management"
+    - "architecture_design"
+    - "requirement_analysis"
+  
+  code_centric:
+    - "coding"
+    - "debugging"
+    - "refactoring"
+    - "code_review"
+    - "testing"
+    - "performance_optimization"
+    - "security_implementation"
+    - "api_development"
+  
+  creative_exploratory:
+    - "creative"
+    - "exploratory"
+    - "research"
+    - "brainstorming"
+    - "documentation"
+    - "content_generation"
+    - "ideation"
+
+# Complexity Assessment Criteria
+complexity_criteria:
+  low:
+    - changed_lines: "<100"
+    - files_affected: "<5"
+    - dependency_changes: false
+    - breaking_changes: false
+  
+  medium:
+    - changed_lines: "100-250"
+    - files_affected: "5-15"
+    - dependency_changes: "minor"
+    - breaking_changes: "backwards_compatible"
+  
+  high:
+    - changed_lines: "250-500"
+    - files_affected: "15-30"
+    - dependency_changes: "major"
+    - breaking_changes: "some"
+  
+  critical:
+    - changed_lines: ">500"
+    - files_affected: ">30"
+    - dependency_changes: "breaking"
+    - breaking_changes: "significant"
+    - systems: ["production", "critical"]
+
+# Error Handling and Retry Logic
+error_handling:
+  retry_escalation:
+    - attempt: 1
+      model: "primary_for_task"
+    - attempt: 2
+      model: "first_fallback"
+    - attempt: 3
+      model: "google/gemini-2.5-pro"  # Ultimate fallback
+  
+  error_types:
+    timeout: "escalate_to_faster_model"
+    context_limit: "escalate_to_higher_capacity_model"
+    rate_limit: "switch_to_alternative_provider"
+    quality_issue: "escalate_to_higher_accuracy_model"
+
+# Performance Monitoring
+performance_tracking:
+  metrics:
+    - "response_time"
+    - "accuracy_score"
+    - "retry_count"
+    - "task_completion_rate"
+    - "user_satisfaction"
+  
+  optimization_triggers:
+    - high_retry_rate: "review_model_assignment"
+    - low_accuracy: "consider_model_upgrade"
+    - slow_response: "consider_faster_model"
+
+# Special Use Cases
+special_cases:
+  data_stack_specific:
+    dagster_tasks:
+      preferred_model: "anthropic/claude-4-sonnet"
+      escalation_model: "anthropic/claude-3-opus"
+    
+    dbt_transformations:
+      preferred_model: "anthropic/claude-4-sonnet"
+      complex_sql_model: "anthropic/claude-3-opus"
+    
+    docker_compose_management:
+      preferred_model: "anthropic/claude-4-sonnet"
+      infrastructure_model: "anthropic/claude-3-opus"
+    
+    dependency_management:
+      preferred_model: "anthropic/claude-4-sonnet"
+      compatibility_analysis: "anthropic/claude-3-opus"
+
+# Model Availability Validation (July 2025)
+model_validation:
+  verified_models:
+    openai:
+      - "gpt-o3"  # Assuming available by July 2025
+      - "gpt-4o"  # Fallback if o3 not available
+    anthropic:
+      - "claude-4-sonnet"  # Primary coding model
+      - "claude-3.5-sonnet"  # Fallback
+      - "claude-3-opus"  # Complex tasks
+    google:
+      - "gemini-2.5-pro"  # Latest as of request
+      - "gemini-2.0-pro"  # Fallback
+    mistral:
+      - "mixtral-8x22b"  # Alternative for creative tasks
+  
+  fallback_mapping:
+    "anthropic/claude-4-sonnet": "anthropic/claude-3.5-sonnet"
+    "openai/gpt-o3": "openai/gpt-4o"
+    "google/gemini-2.5-pro": "google/gemini-2.0-pro"
+
+# Version and Metadata
+config_version: "1.0.0"
+last_updated: "2025-07-02"
+maintainer: "freelancer-data-stack"
+description: "AI model routing configuration emphasizing Claude 4 Sonnet for standard coding, Claude 3 Opus for complex tasks, and Gemini 2.5 Pro for fallback and creative work"
+notes: "Model names validated for July 2025 availability. Includes fallback mappings for model unavailability."

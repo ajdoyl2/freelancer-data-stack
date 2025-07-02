@@ -1,0 +1,184 @@
+name: "AI Agent Prompt Snippets"
+description: "Quick access to AI agent prompts for development workflows"
+version: "1.0.0"
+
+snippets:
+  # Quick prompt viewing
+  - name: "prompt_view"
+    description: "View a specific prompt"
+    command: "cat prompts/{{category}}/{{prompt_name}}.md"
+    parameters:
+      category:
+        description: "Prompt category"
+        suggestions: ["coding", "data", "debugging", "testing", "deployment", "documentation", "architecture", "analysis"]
+      prompt_name:
+        description: "Prompt filename without .md"
+        
+  - name: "prompt_search"
+    description: "Search prompts by keyword"
+    command: "grep -r '{{keyword}}' prompts/ --include='*.md'"
+    parameters:
+      keyword:
+        description: "Search term"
+        
+  - name: "prompt_list"
+    description: "List all prompts in a category"
+    command: "ls prompts/{{category}}/*.md"
+    parameters:
+      category:
+        description: "Prompt category"
+        suggestions: ["coding", "data", "debugging", "testing", "deployment", "documentation", "architecture", "analysis"]
+
+  # Common prompts - quick access
+  - name: "code_review"
+    description: "Open comprehensive code review prompt"
+    command: "cat prompts/coding/code_review.md"
+    
+  - name: "pipeline_design"
+    description: "Open data pipeline design prompt"
+    command: "cat prompts/data/pipeline_design.md"
+    
+  - name: "debug_error"
+    description: "Open error analysis debugging prompt"
+    command: "cat prompts/debugging/error_analysis.md"
+    
+  - name: "production_issue"
+    description: "Emergency production issue troubleshooting"
+    command: "cat prompts/debugging/production_issues.md"
+
+  # Prompt workflow chains
+  - name: "new_feature_workflow"
+    description: "Complete new feature development prompt chain"
+    command: |
+      echo "🚀 New Feature Development Workflow"
+      echo "1. Architecture Design:"
+      echo "   cat prompts/architecture/system_design.md"
+      echo ""
+      echo "2. API Design:"
+      echo "   cat prompts/coding/api_design.md"
+      echo ""
+      echo "3. Implementation:"
+      echo "   cat prompts/coding/fastapi_endpoint.md"
+      echo ""
+      echo "4. Testing:"
+      echo "   cat prompts/testing/unit_tests.md"
+      echo ""
+      echo "5. Code Review:"
+      echo "   cat prompts/coding/code_review.md"
+
+  - name: "data_pipeline_workflow"
+    description: "Complete data pipeline development workflow"
+    command: |
+      echo "📊 Data Pipeline Development Workflow"
+      echo "1. Pipeline Design:"
+      echo "   cat prompts/data/pipeline_design.md"
+      echo ""
+      echo "2. Dagster Assets:"
+      echo "   cat prompts/data/dagster_asset.md"
+      echo ""
+      echo "3. dbt Models:"
+      echo "   cat prompts/data/dbt_model.md"
+      echo ""
+      echo "4. Data Quality:"
+      echo "   cat prompts/data/data_quality_checks.md"
+      echo ""
+      echo "5. Testing:"
+      echo "   cat prompts/testing/integration_tests.md"
+
+  - name: "debug_workflow"
+    description: "Emergency debugging workflow"
+    command: |
+      echo "🐛 Emergency Debugging Workflow"
+      echo "1. Production Triage:"
+      echo "   cat prompts/debugging/production_issues.md"
+      echo ""
+      echo "2. Error Analysis:"
+      echo "   cat prompts/debugging/error_analysis.md"
+      echo ""
+      echo "3. Log Investigation:"
+      echo "   cat prompts/debugging/log_analysis.md"
+      echo ""
+      echo "4. Health Check:"
+      echo "   cat prompts/debugging/health_check_debugging.md"
+
+  # Prompt creation and maintenance
+  - name: "create_prompt"
+    description: "Create a new prompt from template"
+    command: |
+      echo "Creating new prompt: {{prompt_name}}"
+      cp prompts/template.md "prompts/{{category}}/{{prompt_name}}.md"
+      echo "✅ Template copied to prompts/{{category}}/{{prompt_name}}.md"
+      echo "📝 Edit the file to customize your prompt"
+    parameters:
+      category:
+        description: "Prompt category"
+        suggestions: ["coding", "data", "debugging", "testing", "deployment", "documentation", "architecture", "analysis"]
+      prompt_name:
+        description: "New prompt filename (without .md)"
+
+  - name: "prompt_stats"
+    description: "Show prompt library statistics"
+    command: |
+      echo "📊 Prompt Library Statistics"
+      echo "Total prompts: $(find prompts/ -name '*.md' -not -name 'README.md' -not -name 'template.md' | wc -l)"
+      echo ""
+      echo "By category:"
+      for dir in prompts/*/; do
+        if [ -d "$dir" ]; then
+          category=$(basename "$dir")
+          count=$(find "$dir" -name '*.md' -not -name 'index.md' | wc -l)
+          echo "  $category: $count prompts"
+        fi
+      done
+
+  # Integration with agent workflows
+  - name: "agent_prompt_context"
+    description: "Set up agent context with prompt access"
+    command: |
+      echo "🤖 AI Agent Prompt Context Setup"
+      export PROMPT_LIBRARY_PATH="$(pwd)/prompts"
+      echo "✅ PROMPT_LIBRARY_PATH set to: $PROMPT_LIBRARY_PATH"
+      echo ""
+      echo "Available prompt categories:"
+      ls prompts/ | grep -v README.md | grep -v template.md
+      echo ""
+      echo "Usage: Use prompt_view, prompt_search, or specific prompt shortcuts"
+
+  # Quick references
+  - name: "prompt_help"
+    description: "Show prompt library help and commands"
+    command: |
+      echo "🎯 AI Agent Prompt Library Help"
+      echo ""
+      echo "📚 Quick Access:"
+      echo "  prompt_view <category> <name> - View specific prompt"
+      echo "  prompt_search <keyword>       - Search all prompts"
+      echo "  prompt_list <category>        - List category prompts"
+      echo ""
+      echo "🔥 Popular Prompts:"
+      echo "  code_review        - Comprehensive code review"
+      echo "  pipeline_design    - Data pipeline architecture"
+      echo "  debug_error        - Error analysis and resolution"
+      echo "  production_issue   - Emergency troubleshooting"
+      echo ""
+      echo "🚀 Workflows:"
+      echo "  new_feature_workflow    - Complete feature development"
+      echo "  data_pipeline_workflow  - Complete pipeline development"
+      echo "  debug_workflow          - Emergency debugging process"
+      echo ""
+      echo "🛠️ Management:"
+      echo "  create_prompt      - Create new prompt from template"
+      echo "  prompt_stats       - Library statistics"
+      echo ""
+      echo "📖 Full documentation: cat prompts/README.md"
+
+aliases:
+  # Short aliases for common operations
+  pv: "prompt_view"
+  ps: "prompt_search"
+  pl: "prompt_list"
+  cr: "code_review"
+  pd: "pipeline_design"
+  de: "debug_error"
+  pi: "production_issue"
+  ph: "prompt_help"

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "AI Code Review",
+    "description": "Comprehensive code review with quality, security, and performance analysis",
+    "command": "echo 'Please perform a comprehensive code review of the following code. Focus on:\n\n1. Code Quality & Style:\n   - PEP 8 compliance, type hints, docstrings\n   - Code organization and decomposition\n   - Import organization\n\n2. Functionality & Logic:\n   - Correctness and edge case handling\n   - Data validation and business logic alignment\n   - Algorithm efficiency\n\n3. Data Stack Integration:\n   - Dagster asset dependencies and resource usage\n   - dbt model structure and testing\n   - Database connection management\n\n4. Security & Best Practices:\n   - Input validation and injection prevention\n   - Secrets management\n   - Error handling and logging\n\n5. Testing & Documentation:\n   - Test coverage and mock usage\n   - API documentation and examples\n\nProvide specific recommendations with before/after code examples where helpful.'",
+    "tags": ["ai", "code-review", "quality", "python", "dagster", "dbt"],
+    "arguments": []
+  },
+  {
+    "name": "Data Pipeline Design",
+    "description": "Design comprehensive data pipeline architecture with Dagster and dbt",
+    "command": "echo 'Design a comprehensive data pipeline using our freelancer data stack:\n\nStack: Dagster (orchestration), dbt (transformation), DuckDB (warehouse), Streamlit (visualization)\nInfrastructure: Docker Compose, Poetry, PostgreSQL, Redis\n\nPlease provide:\n\n1. Architecture Overview:\n   - Data flow from sources to consumption\n   - Component interaction diagram\n   - Technology stack integration\n\n2. Implementation Strategy:\n   - Dagster assets and jobs structure\n   - dbt model organization (staging/intermediate/marts)\n   - Data quality framework with Great Expectations\n\n3. Quality & Performance:\n   - Error handling and retry mechanisms\n   - Monitoring and alerting setup\n   - Performance optimization strategies\n\n4. Detailed Design:\n   - Source system connections\n   - Transformation logic\n   - Storage optimization\n   - Scheduling and dependencies\n\nProvide specific code examples for Dagster assets and dbt models.'",
+    "tags": ["ai", "data-pipeline", "architecture", "dagster", "dbt", "design"],
+    "arguments": []
+  },
+  {
+    "name": "AI Debug Assistant", 
+    "description": "Systematic error analysis and troubleshooting for data stack issues",
+    "command": "echo 'Help me debug this issue systematically:\n\n1. Initial Analysis:\n   - Understand the error context and symptoms\n   - Identify the component (Dagster, dbt, DuckDB, Docker, etc.)\n   - Determine the data flow impact\n\n2. Investigation Steps:\n   - Check logs and error messages\n   - Verify service health (Docker, databases)\n   - Test connectivity and dependencies\n   - Review recent changes\n\n3. Data Stack Specific Checks:\n   - Dagster asset status and dependencies\n   - dbt model compilation and execution\n   - Database connections and queries\n   - Docker service status\n\n4. Resolution Strategy:\n   - Provide specific troubleshooting steps\n   - Suggest immediate fixes and long-term solutions\n   - Include prevention measures\n   - Recommend monitoring improvements\n\nPlease provide actionable steps with specific commands where applicable.'",
+    "tags": ["ai", "debugging", "troubleshooting", "dagster", "dbt", "docker"],
+    "arguments": []
+  },
+  {
+    "name": "Production Issue Triage",
+    "description": "Emergency production issue response and resolution",
+    "command": "echo 'PRODUCTION ISSUE TRIAGE - Emergency Response:\n\n🚨 IMMEDIATE ASSESSMENT:\n1. Impact Analysis:\n   - What services/data are affected?\n   - How many users/processes impacted?\n   - Data integrity concerns?\n\n2. Quick Stabilization:\n   - Can we rollback recent changes?\n   - Are there immediate workarounds?\n   - Need to pause automated processes?\n\n3. Service Health Check:\n   - Docker services: docker-compose ps\n   - Database connectivity\n   - Dagster pipeline status\n   - Data freshness validation\n\n🔍 ROOT CAUSE INVESTIGATION:\n1. Recent Changes:\n   - Git commits in last 24 hours\n   - Deployment timeline\n   - Configuration changes\n\n2. System Diagnostics:\n   - Resource usage (CPU, memory, disk)\n   - Error logs and patterns\n   - Network connectivity\n\n3. Data Pipeline Status:\n   - Failed Dagster runs\n   - dbt model failures\n   - Data quality check results\n\n🛠️ RESOLUTION & RECOVERY:\nProvide step-by-step recovery plan with rollback options.'",
+    "tags": ["ai", "production", "emergency", "triage", "incident"],
+    "arguments": []
+  },
+  {
+    "name": "dbt Model Development",
+    "description": "Create optimized dbt models following best practices",
+    "command": "echo 'Help me develop a dbt model following freelancer data stack best practices:\n\nStack Context: dbt-core 1.8.8, dbt-duckdb 1.9.4, DuckDB warehouse\n\nPlease provide:\n\n1. Model Structure:\n   - Proper staging/intermediate/marts organization\n   - Materialization strategy (table/view/incremental)\n   - Partitioning and clustering recommendations\n\n2. SQL Best Practices:\n   - Optimized queries for DuckDB\n   - Proper use of dbt functions and macros\n   - Window functions and aggregations\n\n3. Testing & Documentation:\n   - dbt tests (unique, not_null, relationships)\n   - Custom data quality tests\n   - Model and column descriptions\n\n4. Performance Optimization:\n   - Incremental model patterns\n   - Efficient joins and filters\n   - Memory usage considerations\n\n5. Dependencies & Lineage:\n   - Source and ref() usage\n   - Proper dependency structure\n   - Dagster asset integration\n\nProvide complete model code with tests and documentation.'",
+    "tags": ["ai", "dbt", "sql", "data-modeling", "optimization"],
+    "arguments": []
+  },
+  {
+    "name": "Dagster Asset Creation",
+    "description": "Create Dagster assets with proper dependencies and metadata",
+    "command": "echo 'Help me create a Dagster asset following our data stack patterns:\n\nStack: Dagster 1.8.13, integrated with dbt, DuckDB, DataHub\n\nPlease provide:\n\n1. Asset Definition:\n   - Proper asset decorator usage\n   - Dependencies and partitioning\n   - Resource configuration\n\n2. Integration Patterns:\n   - dbt model execution\n   - Database connection handling\n   - Data quality validation\n\n3. Metadata & Monitoring:\n   - MaterializeResult with metadata\n   - Logging and observability\n   - Error handling and retries\n\n4. Testing Strategy:\n   - Unit tests for asset logic\n   - Integration tests with dependencies\n   - Mock patterns for external services\n\n5. Performance Considerations:\n   - Batch processing patterns\n   - Memory management\n   - Incremental processing\n\nProvide complete asset code with tests and documentation.'",
+    "tags": ["ai", "dagster", "assets", "orchestration", "python"],
+    "arguments": []
+  }
+]

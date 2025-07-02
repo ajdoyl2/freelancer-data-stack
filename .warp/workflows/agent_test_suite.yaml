@@ -1,0 +1,78 @@
+name: "Agent Test Suite"
+description: "Comprehensive test suite for validating AI agent interactions and data stack components"
+version: "1.0.0"
+
+commands:
+  - name: "pre_test_setup"
+    description: "Setup environment and dependencies before running tests"
+    command: |
+      echo "🔧 Setting up test environment..."
+      poetry install --with dev,test
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+      
+  - name: "run_unit_tests"
+    description: "Run unit tests for all components"
+    command: |
+      echo "🧪 Running unit tests..."
+      poetry run pytest tests/unit/ -v --tb=short --color=yes
+      
+  - name: "run_integration_tests"
+    description: "Run integration tests for data pipeline"
+    command: |
+      echo "🔗 Running integration tests..."
+      poetry run pytest tests/integration/ -v --tb=short --color=yes
+      
+  - name: "run_dagster_tests"
+    description: "Run Dagster orchestration tests"
+    command: |
+      echo "🏭 Testing Dagster orchestration..."
+      cd orchestration/dagster && poetry run pytest test_dagster.py -v --color=yes
+      
+  - name: "run_dbt_tests"
+    description: "Run dbt model tests and validations"
+    command: |
+      echo "🔄 Testing dbt transformations..."
+      cd transformation/dbt && poetry run dbt test --profiles-dir profiles
+      
+  - name: "validate_configs"
+    description: "Validate all configuration files"
+    command: |
+      echo "⚙️ Validating configurations..."
+      # Validate YAML files
+      find . -name "*.yaml" -o -name "*.yml" | xargs -I {} poetry run python -c "import yaml; yaml.safe_load(open('{}'))"
+      # Validate JSON files
+      find . -name "*.json" | xargs -I {} python -c "import json; json.load(open('{}'))"
+      
+  - name: "check_code_quality"
+    description: "Run code quality checks (linting, formatting, type checking)"
+    command: |
+      echo "✨ Checking code quality..."
+      poetry run ruff check . --fix
+      poetry run black . --check
+      poetry run isort . --check-only
+      poetry run mypy . --ignore-missing-imports
+      
+  - name: "generate_test_report"
+    description: "Generate comprehensive test report"
+    command: |
+      echo "📊 Generating test report..."
+      poetry run pytest --html=reports/test_report.html --self-contained-html --cov=. --cov-report=html:reports/coverage/
+      echo "✅ Test report generated in reports/"
+
+workflow:
+  - pre_test_setup
+  - validate_configs
+  - check_code_quality
+  - run_unit_tests
+  - run_integration_tests
+  - run_dagster_tests
+  - run_dbt_tests
+  - generate_test_report
+
+on_failure:
+  - command: |
+      echo "❌ Test suite failed. Check logs above for details."
+      echo "💡 Common fixes:"
+      echo "  - Run 'poetry install' to ensure dependencies are up to date"
+      echo "  - Check .env files are properly configured"
+      echo "  - Verify Docker services are running if needed"
