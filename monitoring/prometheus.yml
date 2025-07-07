@@ -1,0 +1,78 @@
+# Prometheus configuration for AI Agent Data Stack monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rules and alerting
+rule_files:
+  - "alert_rules.yml"
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Airflow monitoring
+  - job_name: 'airflow'
+    static_configs:
+      - targets: ['airflow-webserver:8080']
+    metrics_path: '/admin/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL monitoring
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 30s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+
+  # DuckDB HTTP monitoring (custom metrics)
+  - job_name: 'duckdb'
+    static_configs:
+      - targets: ['duckdb-http:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # MCP Server monitoring
+  - job_name: 'mcp-server'
+    static_configs:
+      - targets: ['mcp-server:80']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Grafana monitoring
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # DataHub monitoring
+  - job_name: 'datahub'
+    static_configs:
+      - targets: ['datahub-gms:8080']
+    metrics_path: '/openapi/docs'
+    scrape_interval: 60s
+
+  # Meltano custom metrics (if available)
+  - job_name: 'meltano'
+    static_configs:
+      - targets: ['meltano:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+    honor_labels: true

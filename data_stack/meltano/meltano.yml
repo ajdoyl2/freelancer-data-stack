@@ -1,0 +1,140 @@
+version: 1
+default_environment: dev
+project_id: ai-agent-data-stack-$(date +%s)
+
+environments:
+  - name: dev
+    config:
+      plugins:
+        extractors:
+          - name: tap-csv
+            config:
+              files:
+                - entity: transactions
+                  path: /app/transactions.csv
+                  keys:
+                    - transaction_id
+        loaders:
+          - name: target-duckdb
+            config:
+              filepath: /data/duckdb/analytics.db
+              default_target_schema: raw_data
+
+  - name: staging
+    config:
+      plugins:
+        extractors:
+          - name: tap-csv
+            config:
+              files:
+                - entity: transactions
+                  path: /app/transactions.csv
+                  keys:
+                    - transaction_id
+        loaders:
+          - name: target-duckdb
+            config:
+              filepath: /data/duckdb/analytics_staging.db
+              default_target_schema: raw_data
+
+  - name: prod
+    config:
+      plugins:
+        extractors:
+          - name: tap-csv
+            config:
+              files:
+                - entity: transactions
+                  path: /app/transactions.csv
+                  keys:
+                    - transaction_id
+        loaders:
+          - name: target-duckdb
+            config:
+              filepath: /data/duckdb/analytics_prod.db
+              default_target_schema: raw_data
+
+plugins:
+  extractors:
+    - name: tap-csv
+      variant: meltanolabs
+      pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+      docs: https://hub.meltano.com/extractors/tap-csv
+      repo: https://github.com/MeltanoLabs/tap-csv
+      keywords:
+        - file
+        - csv
+      maintenance_status: active
+      settings:
+        - name: files
+          description: Array of file objects containing path and entity name
+          kind: array
+        - name: add_record_metadata
+          description: Add metadata to records
+          kind: boolean
+          default: true
+
+  loaders:
+    - name: target-duckdb
+      variant: jwills
+      pip_url: target-duckdb~=0.5.0
+      docs: https://hub.meltano.com/loaders/target-duckdb
+      repo: https://github.com/jwills/target-duckdb
+      keywords:
+        - database
+        - duckdb
+        - analytics
+      maintenance_status: active
+      settings:
+        - name: filepath
+          description: Path to DuckDB database file
+          kind: string
+        - name: default_target_schema
+          description: Default schema for target tables
+          kind: string
+          default: raw_data
+        - name: batch_config
+          description: Batch configuration for loading
+          kind: object
+          default:
+            encoding:
+              format: jsonl
+              compression: gzip
+
+jobs:
+  - name: extract-load-transactions
+    tasks:
+      - tap-csv target-duckdb
+
+  - name: full-pipeline
+    tasks:
+      - tap-csv target-duckdb
+      # Future: Add dbt run task here when integrated
+
+schedules:
+  - name: daily-pipeline
+    job: extract-load-transactions
+    interval: "@daily"
+
+  - name: hourly-transactions
+    job: extract-load-transactions
+    interval: "@hourly"
+
+# Meltano configuration
+cli:
+  log_level: info
+  log_config:
+    version: 1
+    disable_existing_loggers: false
+    formatters:
+      default:
+        format: '[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: default
+        stream: ext://sys.stdout
+    root:
+      level: INFO
+      handlers:
+        - console

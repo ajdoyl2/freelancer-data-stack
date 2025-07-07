@@ -35,16 +35,24 @@ services:
     environment:
       - MELTANO_DATABASE_URI=sqlite:////app/.meltano/meltano.db
       - MELTANO_PROJECT_ROOT=/app
+      - DUCKDB_PATH=/data/duckdb/analytics.db
+      - PYTHONPATH=/app:/app/tools
     volumes:
-      - ./meltano:/app
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
+      - ./data_stack/meltano:/app
+      - ./tools:/app/tools
+      - ./transactions.csv:/app/transactions.csv
+      - /data/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: ["/bin/bash"]
-    command: ["-c", "while true; do sleep 30; done"]  # Keep container running
+    command: ["meltano", "--help"]  # Show help and keep running
+    healthcheck:
+      test: ["CMD", "meltano", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Redis - Required for Airflow Celery executor
   redis:
@@ -81,12 +89,17 @@ services:
       - _AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
       - _AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
     volumes:
-      - ${HOME}/data-stack/volumes/airflow/dags:/opt/airflow/dags
-      - ${HOME}/data-stack/volumes/airflow/logs:/opt/airflow/logs
-      - ${HOME}/data-stack/volumes/airflow/config:/opt/airflow/config
-      - ${HOME}/data-stack/volumes/airflow/plugins:/opt/airflow/plugins
-      - ./meltano:/app/meltano
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
+      - /data/airflow/dags:/opt/airflow/dags
+      - /data/airflow/logs:/opt/airflow/logs
+      - /data/airflow/config:/opt/airflow/config
+      - /data/airflow/plugins:/opt/airflow/plugins
+      - ./data_stack/meltano:/app/meltano
+      - ./data_stack/dbt:/app/dbt
+      - ./tools:/app/tools
+      - ./agents:/app/agents
+      - ./scripts:/app/scripts
+      - ./transactions.csv:/app/transactions.csv
+      - /data/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
@@ -98,7 +111,7 @@ services:
   airflow-webserver:
     image: apache/airflow:3.0.2-python3.11
     container_name: airflow-webserver
-    command: api-server
+    command: webserver
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -109,11 +122,16 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
       - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
       - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
+      - PYTHONPATH=/app:/app/tools:/app/agents
     volumes:
-      - ${HOME}/data-stack/volumes/airflow/dags:/opt/airflow/dags
-      - ${HOME}/data-stack/volumes/airflow/logs:/opt/airflow/logs
-      - ${HOME}/data-stack/volumes/airflow/config:/opt/airflow/config
-      - ${HOME}/data-stack/volumes/airflow/plugins:/opt/airflow/plugins
+      - /data/airflow/dags:/opt/airflow/dags
+      - /data/airflow/logs:/opt/airflow/logs
+      - /data/airflow/config:/opt/airflow/config
+      - /data/airflow/plugins:/opt/airflow/plugins
+      - ./data_stack/airflow/dags:/opt/airflow/dags
+      - ./tools:/app/tools
+      - ./agents:/app/agents
+      - /data/duckdb:/data/duckdb
     ports:
       - "8080:8080"
     networks:
@@ -523,33 +541,57 @@ services:
   duckdb-http:
     image: python:3.11-slim
     container_name: data-stack-duckdb
-    command: ["/bin/bash", "-c", "pip install duckdb pandas fastapi uvicorn && python -c 'import duckdb; print(\"DuckDB ready\")' && while true; do sleep 30; done"]
+    command: ["/bin/bash", "-c", "pip install duckdb pandas fastapi uvicorn pydantic && python -c 'import duckdb; print(\"DuckDB ready\")' && while true; do sleep 30; done"]
     volumes:
-      - ${HOME}/data-stack/volumes/duckdb:/data
+      - /data/duckdb:/data
+      - ./tools:/app/tools
+    environment:
+      - PYTHONPATH=/app:/app/tools
+      - DUCKDB_PATH=/data/analytics.db
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "python", "-c", "import duckdb; duckdb.connect('/data/analytics.db').execute('SELECT 1')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: data-stack-prometheus
     volumes:
-      - ${HOME}/data-stack/volumes/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - /data/prometheus:/prometheus
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
       - data-stack
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
 
   # Grafana
   grafana:
     image: grafana/grafana:latest
     container_name: data-stack-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
-      - ${HOME}/data-stack/volumes/grafana:/var/lib/grafana
+      - /data/grafana:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     ports:
       - "3000:3000"
     networks:
       - data-stack
+    depends_on:
+      - prometheus
 
 
   # MCP Server - Model Context Protocol for AI/LLM integration
