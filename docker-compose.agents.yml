@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # AI Agent API Service
+  agents-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: agents-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - XAI_API_KEY=${XAI_API_KEY}
+    volumes:
+      - ./agents:/app/agents
+      - ./config:/app/config
+      - ./interface:/app/interface
+      - ./tools:/app/tools
+      - ./examples:/app/examples
+    depends_on:
+      - postgres
+    networks:
+      - data-stack
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Agent Web Interface
+  agents-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: agents-ui
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - agents-api
+    networks:
+      - data-stack
+    restart: unless-stopped
+
+networks:
+  data-stack:
+    external: true

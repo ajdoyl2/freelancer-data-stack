@@ -1,0 +1,324 @@
+name: End-to-End Pipeline Testing
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      run_full_stack:
+        description: 'Run full data stack (including DataHub)'
+        required: false
+        default: 'true'
+        type: boolean
+      timeout_minutes:
+        description: 'Timeout in minutes'
+        required: false
+        default: '45'
+        type: string
+
+env:
+  PYTHON_VERSION: "3.11"
+  POSTGRES_PASSWORD: pipeline_test_2025
+  NEO4J_PASSWORD: pipeline_test_2025
+  DATAHUB_SECRET: pipeline-test-secret-key-32-chars
+  AIRFLOW_USERNAME: admin
+  AIRFLOW_PASSWORD: admin
+  AIRFLOW_FERNET_KEY: pipeline-test-fernet-key-32-chars!!
+  JUPYTER_TOKEN: pipeline-test-token
+
+jobs:
+  e2e-pipeline-test:
+    name: End-to-End Pipeline Test
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJson(github.event.inputs.timeout_minutes || '45') }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: data_stack
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root --with dev
+
+    - name: Install additional testing dependencies
+      run: |
+        poetry add requests pyyaml --group dev
+
+    - name: Create environment file
+      run: |
+        cat > .env << EOF
+        POSTGRES_PASSWORD=${{ env.POSTGRES_PASSWORD }}
+        NEO4J_PASSWORD=${{ env.NEO4J_PASSWORD }}
+        DATAHUB_SECRET=${{ env.DATAHUB_SECRET }}
+        AIRFLOW_USERNAME=${{ env.AIRFLOW_USERNAME }}
+        AIRFLOW_PASSWORD=${{ env.AIRFLOW_PASSWORD }}
+        AIRFLOW_FERNET_KEY=${{ env.AIRFLOW_FERNET_KEY }}
+        JUPYTER_TOKEN=${{ env.JUPYTER_TOKEN }}
+        EOF
+
+    - name: Create required directories
+      run: |
+        mkdir -p $HOME/data-stack/volumes/{postgres,redis,airflow/{dags,logs,config,plugins},duckdb,elasticsearch,neo4j,kafka,zookeeper,datahub/{gms,frontend},great-expectations,metabase,traefik,prometheus,grafana,kafka-connect,materialize,ksqldb}
+
+        # Copy DAGs to volume
+        cp -r orchestration/airflow/dags/* $HOME/data-stack/volumes/airflow/dags/ || echo "No DAGs to copy"
+
+        # Create sample data for testing
+        mkdir -p meltano/extract
+        cat > meltano/extract/sample_data.csv << EOF
+        id,name,email,value,segment
+        1,John Doe,john@example.com,100,premium
+        2,Jane Smith,jane@example.com,50,standard
+        3,Bob Johnson,bob@example.com,200,premium
+        4,Alice Brown,alice@example.com,75,standard
+        EOF
+
+    - name: Start core services
+      run: |
+        # Start minimal required services for testing
+        docker compose up -d postgres redis meltano
+
+        # Wait for core services
+        timeout 120s bash -c 'until docker compose ps postgres | grep -q healthy; do sleep 2; done'
+        timeout 60s bash -c 'until docker compose ps redis | grep -q healthy; do sleep 2; done'
+
+    - name: Start Airflow services
+      if: github.event.inputs.run_full_stack == 'true' || github.event.inputs.run_full_stack == ''
+      run: |
+        # Start Airflow components
+        docker compose up -d airflow-init
+        sleep 30
+        docker compose up -d airflow-webserver airflow-scheduler airflow-worker
+
+        # Wait for Airflow to be ready
+        timeout 300s bash -c 'until curl -f http://localhost:8080/health; do sleep 10; done'
+
+    - name: Start DataHub services
+      if: github.event.inputs.run_full_stack == 'true' || github.event.inputs.run_full_stack == ''
+      run: |
+        # Start DataHub dependencies
+        docker compose up -d elasticsearch neo4j kafka zookeeper schema-registry
+
+        # Wait for dependencies
+        sleep 60
+        timeout 180s bash -c 'until curl -f http://localhost:9200/_cluster/health; do sleep 10; done'
+
+        # Start DataHub services
+        docker compose up -d datahub-gms datahub-frontend
+
+        # Wait for DataHub to be ready
+        timeout 300s bash -c 'until curl -f http://localhost:9002/api/v2/system/status; do sleep 15; done'
+
+    - name: Verify services health
+      run: |
+        echo "Checking service health..."
+        docker compose ps
+
+        # Test PostgreSQL
+        docker compose exec -T postgres psql -U postgres -c "SELECT version();"
+
+        # Test Redis
+        docker compose exec -T redis redis-cli ping
+
+        # Test Meltano
+        docker compose exec -T meltano meltano --version
+
+        # Test Airflow (if running)
+        if docker compose ps airflow-webserver | grep -q Up; then
+          curl -f http://localhost:8080/health || echo "Airflow health check failed"
+        fi
+
+        # Test DataHub (if running)
+        if docker compose ps datahub-frontend | grep -q Up; then
+          curl -f http://localhost:9002/api/v2/system/status || echo "DataHub health check failed"
+        fi
+
+    - name: Prepare test environment
+      run: |
+        # Create test configuration
+        export AIRFLOW_HOST=localhost
+        export AIRFLOW_PORT=8080
+        export DATAHUB_HOST=localhost
+        export DATAHUB_PORT=9002
+        export MELTANO_PROJECT_DIR=./meltano
+        export DBT_PROJECT_DIR=./transformation/dbt
+
+        # Initialize Meltano project if needed
+        cd meltano
+        poetry run meltano install
+        cd ..
+
+    - name: Run End-to-End Pipeline Tests
+      env:
+        AIRFLOW_HOST: localhost
+        AIRFLOW_PORT: 8080
+        DATAHUB_HOST: localhost
+        DATAHUB_PORT: 9002
+        MELTANO_PROJECT_DIR: ./meltano
+        DBT_PROJECT_DIR: ./transformation/dbt
+      run: |
+        echo "Starting E2E Pipeline Testing..."
+        poetry run python scripts/e2e_pipeline_test.py
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: e2e-pipeline-test-results
+        path: |
+          e2e_pipeline_test.log
+          e2e_pipeline_coverage_report.json
+        retention-days: 30
+
+    - name: Upload coverage report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: e2e-pipeline-coverage-report
+        path: e2e_pipeline_coverage_report.json
+        retention-days: 30
+
+    - name: Parse test results
+      if: always()
+      id: parse_results
+      run: |
+        if [ -f "e2e_pipeline_coverage_report.json" ]; then
+          TOTAL_TESTS=$(jq -r '.summary.total_tests' e2e_pipeline_coverage_report.json)
+          PASSED_TESTS=$(jq -r '.summary.passed' e2e_pipeline_coverage_report.json)
+          FAILED_TESTS=$(jq -r '.summary.failed' e2e_pipeline_coverage_report.json)
+          COVERAGE=$(jq -r '.summary.coverage_percentage' e2e_pipeline_coverage_report.json)
+
+          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+          echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+          echo "## E2E Pipeline Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Tests:** $TOTAL_TESTS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Passed:** $PASSED_TESTS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Failed:** $FAILED_TESTS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Coverage:** $COVERAGE%" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$FAILED_TESTS" -gt 0 ]; then
+            echo "❌ **Some tests failed. Check the detailed report for more information.**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **All tests passed successfully!**" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "No test results file found" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+
+          if (!fs.existsSync('e2e_pipeline_coverage_report.json')) {
+            return;
+          }
+
+          const report = JSON.parse(fs.readFileSync('e2e_pipeline_coverage_report.json', 'utf8'));
+
+          const comment = `## 🧪 E2E Pipeline Test Results
+
+          **Test Summary:**
+          - **Total Tests:** ${report.summary.total_tests}
+          - **Passed:** ${report.summary.passed} ✅
+          - **Failed:** ${report.summary.failed} ❌
+          - **Coverage:** ${report.summary.coverage_percentage}%
+
+          **Duration:** ${Math.round(report.duration_seconds)}s
+
+          ${report.summary.failed > 0 ? '❌ Some tests failed. Check the detailed report for more information.' : '✅ All tests passed successfully!'}
+
+          <details>
+          <summary>Detailed Test Results</summary>
+
+          ${report.test_results.map(test =>
+            `- **${test.name}**: ${test.status} (${Math.round(test.duration_seconds)}s)\n  ${test.message}`
+          ).join('\n\n')}
+
+          </details>`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+    - name: Collect service logs
+      if: failure()
+      run: |
+        echo "Collecting service logs for debugging..."
+        mkdir -p logs
+
+        # Collect Docker logs
+        docker compose logs --tail=100 postgres > logs/postgres.log 2>&1 || true
+        docker compose logs --tail=100 redis > logs/redis.log 2>&1 || true
+        docker compose logs --tail=100 meltano > logs/meltano.log 2>&1 || true
+
+        if docker compose ps airflow-webserver | grep -q Up; then
+          docker compose logs --tail=100 airflow-webserver > logs/airflow-webserver.log 2>&1 || true
+          docker compose logs --tail=100 airflow-scheduler > logs/airflow-scheduler.log 2>&1 || true
+        fi
+
+        if docker compose ps datahub-gms | grep -q Up; then
+          docker compose logs --tail=100 datahub-gms > logs/datahub-gms.log 2>&1 || true
+          docker compose logs --tail=100 datahub-frontend > logs/datahub-frontend.log 2>&1 || true
+        fi
+
+    - name: Upload service logs
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: service-logs
+        path: logs/
+        retention-days: 7
+
+    - name: Cleanup
+      if: always()
+      run: |
+        # Cleanup containers and volumes
+        docker compose down -v || true
+        docker system prune -f || true

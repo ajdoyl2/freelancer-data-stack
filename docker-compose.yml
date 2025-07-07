@@ -98,7 +98,7 @@ services:
   airflow-webserver:
     image: apache/airflow:3.0.2-python3.11
     container_name: airflow-webserver
-    command: webserver
+    command: api-server
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
@@ -299,6 +299,26 @@ services:
     networks:
       - data-stack
 
+  # Qdrant vector store for similarity search
+  qdrant:
+    image: qdrant/qdrant:v1.9.1
+    container_name: data-stack-qdrant
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HTTP_PORT=6333
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   neo4j:
     image: neo4j:4.4.9
     container_name: data-stack-neo4j
@@ -421,46 +441,46 @@ services:
     profiles:
       - streaming
 
-  # Great Expectations with Jupyter and Streamlit
-  great-expectations:
-    image: greatexpectations/great_expectations:latest
-    container_name: data-stack-great-expectations
-    environment:
-      - JUPYTER_ENABLE_LAB=yes
-      - JUPYTER_TOKEN=${JUPYTER_TOKEN:-}
-    volumes:
-      - ${HOME}/data-stack/volumes/great-expectations:/home/jovyan/work
-      - ./viz/streamlit:/home/jovyan/streamlit
-    ports:
-      - "8888:8888"
-      - "8501:8501"  # Streamlit port
-    networks:
-      - data-stack
-    command: >
-      bash -c "pip install streamlit pandas plotly duckdb sqlalchemy psycopg2-binary &&
-               jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='${JUPYTER_TOKEN:-}' &
-               streamlit run /home/jovyan/streamlit/app.py --server.address=0.0.0.0 --server.port=8501"
+  # Great Expectations with Jupyter and Streamlit - DISABLED due to image issues
+  # great-expectations:
+  #   image: greatexpectations/great_expectations:latest
+  #   container_name: data-stack-great-expectations
+  #   environment:
+  #     - JUPYTER_ENABLE_LAB=yes
+  #     - JUPYTER_TOKEN=${JUPYTER_TOKEN:-}
+  #   volumes:
+  #     - ${HOME}/data-stack/volumes/great-expectations:/home/jovyan/work
+  #     - ./viz/streamlit:/home/jovyan/streamlit
+  #   ports:
+  #     - "8888:8888"
+  #     - "8501:8501"  # Streamlit port
+  #   networks:
+  #     - data-stack
+  #   command: >
+  #     bash -c "pip install streamlit pandas plotly duckdb sqlalchemy psycopg2-binary &&
+  #              jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='${JUPYTER_TOKEN:-}' &
+  #              streamlit run /home/jovyan/streamlit/app.py --server.address=0.0.0.0 --server.port=8501"
 
-  # Evidence.dev development server
-  evidence:
-    image: evidence-dev/evidence:latest
-    container_name: data-stack-evidence
-    environment:
-      - NODE_ENV=development
-      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
-      - SNOWFLAKE_USERNAME=${SNOWFLAKE_USERNAME}
-      - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
-      - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
-      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
-      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
-      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
-    volumes:
-      - ./viz/evidence:/app
-      - ${HOME}/data-stack/volumes/duckdb:/data
-    ports:
-      - "3001:3000"
-    networks:
-      - data-stack
+  # Evidence.dev development server - DISABLED due to image issues
+  # evidence:
+  #   image: evidence-dev/evidence:latest
+  #   container_name: data-stack-evidence
+  #   environment:
+  #     - NODE_ENV=development
+  #     - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+  #     - SNOWFLAKE_USERNAME=${SNOWFLAKE_USERNAME}
+  #     - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+  #     - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
+  #     - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+  #     - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+  #     - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+  #   volumes:
+  #     - ./viz/evidence:/app
+  #     - ${HOME}/data-stack/volumes/duckdb:/data
+  #   ports:
+  #     - "3001:3000"
+  #   networks:
+  #     - data-stack
 
   # Metabase
   metabase:
@@ -617,6 +637,7 @@ volumes:
   zookeeper_data:
   elasticsearch_data:
   neo4j_data:
+  qdrant_data:
   great_expectations_data:
   evidence_data:
   metabase_data:
