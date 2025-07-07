@@ -1,0 +1,312 @@
+version: 2
+
+sources:
+  - name: raw_data
+    description: "Raw data loaded from Meltano ELT pipelines"
+    tables:
+      - name: transactions
+        description: "Raw transaction data from CSV files"
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
+        columns:
+          - name: date
+            description: "Transaction date"
+            tests:
+              - not_null
+          - name: name
+            description: "Transaction description"
+            tests:
+              - not_null
+          - name: amount
+            description: "Transaction amount"
+            tests:
+              - not_null
+
+models:
+  - name: stg_transactions
+    description: |
+      Staging model for transaction data with comprehensive EDA transformations.
+
+      This model performs automated exploratory data analysis including:
+      - Data cleaning and standardization
+      - Outlier detection using IQR method
+      - Time-based feature engineering
+      - Amount categorization and percentile analysis
+      - Data quality scoring and flagging
+
+      The model is designed to be used by AI agents for automated analysis and insights.
+
+    columns:
+      - name: transaction_id
+        description: "Unique identifier for each transaction (surrogate key)"
+        tests:
+          - unique
+          - not_null
+
+      - name: transaction_date
+        description: "Cleaned and parsed transaction date"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: date
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: "2020-01-01"
+              max_value: "2030-12-31"
+
+      - name: transaction_name
+        description: "Standardized transaction description"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_value_lengths_to_be_between:
+              min_value: 1
+              max_value: 500
+
+      - name: amount
+        description: "Transaction amount (positive = inflow, negative = outflow)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: decimal
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -1000000
+              max_value: 1000000
+              strictly: false
+
+      - name: amount_abs
+        description: "Absolute value of transaction amount"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1000000
+
+      - name: transaction_flow
+        description: "Direction of money flow"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['INFLOW', 'OUTFLOW', 'NEUTRAL']
+
+      - name: status
+        description: "Transaction processing status"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['posted', 'pending', 'cleared', 'unknown']
+
+      - name: category
+        description: "Cleaned transaction category"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_value_lengths_to_be_between:
+              min_value: 1
+              max_value: 100
+
+      - name: parent_category
+        description: "Cleaned parent category"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_value_lengths_to_be_between:
+              min_value: 1
+              max_value: 100
+
+      - name: is_excluded
+        description: "Flag indicating if transaction should be excluded from analysis"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: transaction_type
+        description: "Type of transaction"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['regular', 'internal transfer', 'check', 'debit', 'credit', 'other']
+
+      - name: account_name
+        description: "Name of the account"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_value_lengths_to_be_between:
+              min_value: 1
+              max_value: 100
+
+      - name: transaction_year
+        description: "Year extracted from transaction date"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 2020
+              max_value: 2030
+
+      - name: transaction_month
+        description: "Month extracted from transaction date"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 12
+
+      - name: transaction_day
+        description: "Day extracted from transaction date"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 31
+
+      - name: day_of_week
+        description: "Day of week (1=Sunday, 7=Saturday)"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 7
+
+      - name: amount_bucket
+        description: "Categorized amount ranges for analysis"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['MICRO', 'SMALL', 'MEDIUM', 'LARGE', 'VERY_LARGE']
+
+      - name: is_high_value
+        description: "Flag for high-value transactions (>$1000)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_internal_transfer
+        description: "Flag for internal transfer transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_weekend
+        description: "Flag for weekend transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: is_business_day
+        description: "Flag for business day transactions"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
+      - name: has_complete_data
+        description: "Data quality flag indicating complete record"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0.95  # Expect 95%+ of records to be complete
+              max_value: 1.0
+              row_condition: "has_complete_data = true"
+
+      - name: amount_percentile
+        description: "Percentile ranking of transaction amount"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 1
+
+      - name: running_balance
+        description: "Running balance by account"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: decimal
+
+      - name: daily_transaction_count
+        description: "Number of transactions per day"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 1000  # Reasonable upper bound
+
+      - name: is_amount_outlier
+        description: "Flag for amount outliers using IQR method"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+          # Expect outliers to be less than 10% of data
+          - dbt_expectations.expect_column_proportion_of_unique_values_to_be_between:
+              min_value: 0
+              max_value: 0.1
+              row_condition: "is_amount_outlier = true"
+
+      - name: days_since_last_transaction
+        description: "Days elapsed since previous transaction for same account"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 365  # No more than a year gap
+
+      - name: processed_at
+        description: "Timestamp when record was processed"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: timestamp
+
+      - name: dbt_run_timestamp
+        description: "dbt run timestamp for lineage tracking"
+        tests:
+          - not_null
+
+      - name: dbt_invocation_id
+        description: "dbt invocation ID for run tracking"
+        tests:
+          - not_null
+
+    # Model-level tests for comprehensive data quality
+    tests:
+      # Ensure reasonable distribution of transaction flows
+      - dbt_expectations.expect_table_column_count_to_equal:
+          value: 31  # Expected number of columns
+
+      # Ensure reasonable data recency
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
+          max_value: 1000000
+
+      # Ensure no completely duplicate transactions
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - transaction_date
+            - transaction_name
+            - amount
+            - account_name
+
+      # Ensure date consistency
+      - dbt_expectations.expect_column_pair_values_A_to_be_greater_than_B:
+          column_A: transaction_date
+          column_B: "2020-01-01"
+          or_equal: true
+
+      # Business logic tests
+      - assert_positive_inflows_negative_outflows:
+          where: "transaction_flow = 'INFLOW' AND amount <= 0"
+
+      - assert_excluded_transactions_flagged:
+          where: "is_excluded = false AND transaction_type = 'internal transfer'"
+
+# Custom tests for business logic
+tests:
+  - name: assert_positive_inflows_negative_outflows
+    description: "Ensure inflow transactions have positive amounts"
+
+  - name: assert_excluded_transactions_flagged
+    description: "Ensure internal transfers are properly flagged"

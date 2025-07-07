@@ -1,0 +1,157 @@
+# Prometheus alerting rules for AI Agent Data Stack
+
+groups:
+  - name: data_stack_alerts
+    rules:
+      # Service availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 2 minutes."
+
+      # Airflow specific alerts
+      - alert: AirflowSchedulerDown
+        expr: up{job="airflow", instance=~".*scheduler.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Airflow Scheduler is down"
+          description: "Airflow Scheduler has been down for more than 1 minute."
+
+      - alert: AirflowWebserverDown
+        expr: up{job="airflow", instance=~".*webserver.*"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Airflow Webserver is down"
+          description: "Airflow Webserver has been down for more than 2 minutes."
+
+      # Database alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      # Data pipeline alerts
+      - alert: DuckDBConnectionIssue
+        expr: up{job="duckdb"} == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DuckDB connection issues"
+          description: "DuckDB has been unreachable for more than 3 minutes."
+
+      # MCP Server alerts
+      - alert: MCPServerDown
+        expr: up{job="mcp-server"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MCP Server is down"
+          description: "Model Context Protocol server has been down for more than 2 minutes."
+
+  - name: data_quality_alerts
+    rules:
+      # Data quality threshold alerts (would need custom metrics)
+      - alert: DataQualityLow
+        expr: data_quality_score < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data quality score is low"
+          description: "Data quality score has been below 80% for more than 5 minutes."
+
+      - alert: DataQualityCritical
+        expr: data_quality_score < 0.6
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Data quality score is critically low"
+          description: "Data quality score has been below 60% for more than 2 minutes."
+
+  - name: pipeline_performance_alerts
+    rules:
+      # Pipeline execution time alerts
+      - alert: PipelineExecutionSlow
+        expr: pipeline_execution_time > 1800  # 30 minutes
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pipeline execution is slow"
+          description: "Pipeline execution took more than 30 minutes."
+
+      - alert: PipelineExecutionFailed
+        expr: pipeline_success_rate < 0.9
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pipeline success rate is low"
+          description: "Pipeline success rate has been below 90% for more than 10 minutes."
+
+  - name: resource_usage_alerts
+    rules:
+      # Memory usage alerts (would need node exporter)
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage has been above 85% for more than 5 minutes."
+
+      # Disk usage alerts
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage has been above 80% for more than 5 minutes."
+
+  - name: ai_agent_alerts
+    rules:
+      # AI Agent specific alerts
+      - alert: AgentResponseTimeSlow
+        expr: ai_agent_response_time > 30
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI Agent response time is slow"
+          description: "AI Agent took more than 30 seconds to respond."
+
+      - alert: AgentErrorRateHigh
+        expr: ai_agent_error_rate > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI Agent error rate is high"
+          description: "AI Agent error rate has been above 10% for more than 5 minutes."

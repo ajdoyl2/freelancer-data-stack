@@ -1,0 +1,194 @@
+name: 'ai_agent_data_stack'
+version: '1.0.0'
+config-version: 2
+
+# Require dbt 1.10.0 or higher for latest features
+require-dbt-version: ">=1.10.0"
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'ai_agent_data_stack'
+
+# These configurations specify where dbt should look for different types of files.
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+# Configuring models with automated EDA and testing
+models:
+  ai_agent_data_stack:
+    staging:
+      +materialized: view
+      +docs:
+        node_color: "#A8E6CF"  # Light green for staging
+      +pre-hook: "{{ log('Starting ' ~ this.name ~ ' at ' ~ run_started_at, info=true) }}"
+      +post-hook:
+        - "{{ log('Completed ' ~ this.name ~ ' with ' ~ (adapter.get_relation(this.database, this.schema, this.name) | length) ~ ' rows', info=true) }}"
+        - "{{ run_automated_data_quality_checks(this) }}"
+    marts:
+      +materialized: table
+      +docs:
+        node_color: "#FFD93D"  # Yellow for marts
+      +pre-hook: "{{ log('Building mart ' ~ this.name, info=true) }}"
+      +post-hook: "{{ validate_mart_quality(this) }}"
+    incremental:
+      +materialized: incremental
+      +on_schema_change: "fail"
+      +incremental_strategy: "merge"
+      +docs:
+        node_color: "#FF6B6B"  # Red for incremental
+
+# Configuring seeds for transaction data
+seeds:
+  ai_agent_data_stack:
+    +quote_columns: false
+    +docs:
+      node_color: "#4ECDC4"  # Teal for seeds
+    transactions:
+      +column_types:
+        transaction_id: varchar
+        customer_id: varchar
+        amount: decimal(10,2)
+        transaction_date: date
+        category: varchar
+        status: varchar
+
+# Configuring snapshots for change tracking
+snapshots:
+  ai_agent_data_stack:
+    +target_schema: snapshots
+    +docs:
+      node_color: "#95E1D3"  # Light teal for snapshots
+
+# Test configurations
+tests:
+  ai_agent_data_stack:
+    +store_failures: true
+    +schema: test_failures
+
+# Variables for dbt-expectations and automated EDA
+vars:
+  # dbt-expectations configurations
+  dbt_expectations_warn_if_not_tested: false
+  dbt_expectations_store_test_results_as_hard_deletes: true
+
+  # Automated EDA configurations
+  enable_automated_eda: true
+  eda_sample_size: 10000
+  eda_profile_all_columns: true
+
+  # Data quality thresholds
+  quality_threshold_critical: 0.95
+  quality_threshold_warning: 0.90
+
+  # Environment-specific vars
+  start_date: '2024-01-01'
+  end_date: '2025-12-31'
+
+  # DuckDB specific configurations
+  duckdb_file_path: '/data/duckdb/analytics.db'
+  duckdb_schema: 'main'
+
+  # AI Agent configurations
+  enable_ai_validation: true
+  agent_validation_threshold: 0.85
+
+# Exposure configurations
+exposures:
+  ai_agent_data_stack:
+    +docs:
+      node_color: "#B19CD9"  # Purple for exposures
+
+# Sources configuration with automated freshness checks
+sources:
+  ai_agent_data_stack:
+    +docs:
+      node_color: "#F8BBD9"  # Pink for sources
+    raw_data:
+      +freshness:
+        warn_after: {count: 12, period: hour}
+        error_after: {count: 24, period: hour}
+
+# Hooks for automated data quality and AI agent integration
+on-run-start:
+  - "{{ log('Starting dbt run for AI Agent Data Stack at ' ~ run_started_at, info=true) }}"
+  - "{{ create_eda_temp_tables() }}"
+
+on-run-end:
+  - "{{ log('Completed dbt run for AI Agent Data Stack at ' ~ run_started_at, info=true) }}"
+  - "{{ generate_automated_eda_report() }}"
+  - "{{ notify_ai_agents_of_completion() }}"
+  - "{{ cleanup_temp_tables() }}"
+
+# Operation hooks for comprehensive logging
+operation-hooks:
+  before_begin: "{{ log('Beginning operation: ' ~ invocation_id, info=true) }}"
+  after_commit: "{{ log('Committed operation: ' ~ invocation_id, info=true) }}"
+
+# Dispatch configuration for dbt-expectations
+dispatch:
+  - macro_namespace: dbt_expectations
+    search_order: ['dbt_expectations', 'dbt']
+
+# Documentation configuration
+docs:
+  ai_agent_data_stack:
+    +layout: "graph"
+    +theme: "dark"
+
+# Package dependencies
+packages:
+  - package: calogica/dbt_expectations
+    version: [">=0.8.0", "<0.9.0"]
+  - package: dbt-labs/dbt_utils
+    version: [">=1.0.0", "<2.0.0"]
+  - package: tnightengale/dbt_meta_testing
+    version: [">=0.3.0", "<0.4.0"]
+  - package: dbt-labs/audit_helper
+    version: [">=0.8.0", "<0.9.0"]
+
+# Query comments for debugging and monitoring
+query-comment:
+  comment: |
+    {%- set comment_dict = {} -%}
+    {%- do comment_dict.update(
+        app='dbt',
+        dbt_version=dbt_version,
+        profile_name=target.get('profile_name'),
+        target_name=target.get('target_name'),
+        model_name=model.get('name') if model else '',
+        materialization=model.get('config', {}).get('materialized') if model else '',
+        invocation_id=invocation_id,
+        run_started_at=run_started_at
+    ) -%}
+    {{ comment_dict | tojson }}
+  append: true
+  job-label: "ai-agent-data-stack"
+
+# Model configuration defaults
+model-defaults:
+  +persist_docs:
+    relation: true
+    columns: true
+  +on_configuration_change: "continue"
+
+# Concurrency settings for DuckDB
+threads: 4
+
+# Experimental features
+flags:
+  send_anonymous_usage_stats: false
+  use_experimental_parser: true
+  static_parser: true
+  warn_error: true
+  warn_error_options:
+    include: "all"
+    exclude: ["TestingConfigDeprecation"]
