@@ -80,6 +80,7 @@ infra/terraform/backend.tf
 *.sqlite3
 
 # Secrets and environment variables
+.env
 .env.local
 .env.*.local
 secrets/
