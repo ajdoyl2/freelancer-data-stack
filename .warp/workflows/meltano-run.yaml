@@ -1,0 +1,8 @@
+name: "Run Meltano ELT Pipeline"
+command: "cd meltano && meltano run tap-csv target-duckdb dbt-duckdb:run dbt-duckdb:test"
+tags:
+  - meltano
+  - elt
+  - data-pipeline
+description: "Execute the full Meltano ELT pipeline with dbt transformations"
+arguments: []

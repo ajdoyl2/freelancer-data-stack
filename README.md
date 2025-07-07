@@ -1,10 +1,273 @@
-# Freelancer Data Stack
+# Freelancer Data Stack with AI Agents
 
-A comprehensive Docker Compose stack for modern data engineering and analytics workflows.
+A modernized data stack powered by specialized AI agents that can collaborate to handle complex data engineering, analytics, and machine learning workflows through natural language interfaces.
 
-## Services Included
+## 🚀 Quick Start
 
-This stack spins up the following services with all volumes mapped to `~/data-stack/volumes/*`:
+### Prerequisites
+- Docker and Docker Compose
+- Python 3.9+
+- API keys for at least one LLM provider (OpenAI, Anthropic, Google, or xAI)
+
+### Setup
+
+1. **Clone and setup environment:**
+   ```bash
+   git clone <repository-url>
+   cd freelancer-data-stack
+   cp .env.example .env
+   ```
+
+2. **Configure API keys in `.env`:**
+   ```bash
+   # Uncomment and set at least one API key
+   OPENAI_API_KEY=your_openai_api_key_here
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   XAI_API_KEY=your_xai_api_key_here
+   # ... etc
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   python -m pip install pydantic-ai anthropic openai python-dotenv
+   ```
+
+4. **Test the installation:**
+   ```bash
+   python test_implementation.py
+   ```
+
+## 🤖 AI Agents
+
+The system includes 5 specialized AI agents that work together:
+
+### Data Platform Engineer
+- **Role**: Infrastructure management and deployment
+- **Capabilities**: Docker, Terraform, CI/CD, monitoring setup
+- **Tools**: docker_tools, terraform, monitoring_tools
+
+### Data Engineer
+- **Role**: Data pipeline development and ETL processes
+- **Capabilities**: Airflow DAGs, Meltano pipelines, data quality
+- **Tools**: airflow_tools, meltano, database_tools, quality_tools
+
+### Analytics Engineer
+- **Role**: Data modeling and transformation with dbt
+- **Capabilities**: SQL modeling, testing, documentation
+- **Tools**: dbt_tools, sql_tools, documentation_tools
+
+### Data Scientist
+- **Role**: Machine learning and statistical analysis
+- **Capabilities**: Model development, experimentation, analysis
+- **Tools**: jupyter_tools, ml_libraries, statistical_tools
+
+### Data Analyst
+- **Role**: Reporting and visualization
+- **Capabilities**: Dashboard creation, business intelligence
+- **Tools**: metabase_tools, evidence_tools, visualization_tools
+
+## 💬 Natural Language Interface
+
+Interact with agents using natural language:
+
+```python
+from interface.workflow_executor import WorkflowExecutor
+
+executor = WorkflowExecutor()
+
+# Single agent tasks
+result = await executor.process_request("Deploy the Docker services")
+
+# Multi-agent workflows
+result = await executor.process_request("Set up a complete data pipeline from CSV to dashboard")
+```
+
+## 📊 Data Stack Components
+
+### Core Infrastructure
+- **PostgreSQL**: Primary data warehouse
+- **Apache Airflow**: Workflow orchestration
+- **Docker**: Containerization and deployment
+
+### Data Integration
+- **Meltano**: ELT pipeline framework
+- **Great Expectations**: Data quality validation
+- **DataHub**: Data discovery and lineage
+
+### Analytics & ML
+- **dbt**: Data transformation and modeling
+- **Jupyter**: Interactive analysis and ML development
+- **Evidence.dev**: Automated reporting
+
+### Visualization
+- **Metabase**: Business intelligence dashboards
+- **Grafana**: Infrastructure monitoring
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  Natural Lang.  │    │   AI Agents      │    │   Data Stack    │
+│   Interface     │───▶│   Orchestrator   │───▶│   Components    │
+│                 │    │                  │    │                 │
+│ • Prompt Handler│    │ • 5 Specialized  │    │ • PostgreSQL    │
+│ • Workflow Exec │    │   Agent Roles    │    │ • Airflow       │
+│ • Response Form │    │ • Multi-agent    │    │ • dbt           │
+└─────────────────┘    │   Coordination   │    │ • Meltano       │
+                       └──────────────────┘    │ • Metabase      │
+                                               └─────────────────┘
+```
+
+## 📂 Project Structure
+
+```
+freelancer-data-stack/
+├── agents/                 # AI agent implementations
+│   ├── base_agent.py      # Abstract base class
+│   ├── data_platform_engineer.py
+│   ├── data_engineer.py
+│   ├── analytics_engineer.py
+│   ├── data_scientist.py
+│   ├── data_analyst.py
+│   └── orchestrator.py    # Multi-agent coordination
+├── tools/                 # Agent tool implementations
+│   ├── docker_tools.py
+│   ├── dbt_tools.py
+│   └── ...
+├── config/                # Configuration management
+│   ├── agent_configs.py   # Agent settings
+│   ├── model_configs.py   # LLM model configs
+│   └── tool_configs.py    # Tool permissions
+├── interface/             # Natural language interface
+│   ├── prompt_handler.py  # NL prompt analysis
+│   ├── workflow_executor.py # Task execution
+│   └── response_formatter.py # Output formatting
+├── examples/              # Usage examples
+├── tests/                 # Test suite
+├── PRPs/                  # Product Requirements Prompts
+└── docker-compose.yml     # Infrastructure definition
+```
+
+## 🛠️ Configuration
+
+### Agent Configuration
+Agents can be configured per environment in `config/agent_configs.py`:
+
+```python
+# Development settings
+config.timeout_seconds = 180
+config.model_name = "openai:gpt-4"
+config.rate_limit_requests_per_minute = 60
+
+# Production settings
+config.timeout_seconds = 600
+config.model_name = "anthropic:claude-3-5-sonnet-20241022"
+config.rate_limit_requests_per_minute = 30
+```
+
+### Model Selection
+Choose from multiple LLM providers in `config/model_configs.py`:
+- **OpenAI**: GPT-4, GPT-4-turbo, GPT-3.5-turbo
+- **Anthropic**: Claude-3.5-sonnet, Claude-3-haiku
+- **Google**: Gemini-1.5-pro
+- **xAI**: Grok-beta
+
+### Tool Permissions
+Fine-grained tool access control in `config/tool_configs.py`:
+- Role-based permissions (READ_ONLY, WRITE, ADMIN)
+- Safety levels and rate limiting
+- Environment restrictions
+
+## 📚 Examples
+
+See the `examples/` directory for practical usage:
+
+- **[basic_agent_usage.py](examples/basic_agent_usage.py)** - Simple agent interactions
+- **[multi_agent_workflow.py](examples/multi_agent_workflow.py)** - Coordinated workflows
+- **[data_pipeline_setup.py](examples/data_pipeline_setup.py)** - End-to-end pipeline deployment
+
+## 🧪 Testing
+
+Run the comprehensive test suite:
+
+```bash
+# Full validation
+python test_implementation.py
+
+# Unit tests
+pytest tests/
+
+# Agent-specific tests
+python -m pytest tests/test_agents.py
+```
+
+## 🚀 Deployment
+
+### Local Development
+```bash
+# Start data stack services
+docker-compose up -d
+
+# Run agents
+python examples/basic_agent_usage.py
+```
+
+### Production Deployment
+1. Set `ENVIRONMENT=production` in `.env`
+2. Configure production API keys and settings
+3. Deploy with `docker-compose -f docker-compose.prod.yml up -d`
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**API Key Errors**: Ensure `.env` file has valid API keys uncommented
+```bash
+# Check if keys are loaded
+python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('OpenAI:', 'SET' if os.getenv('OPENAI_API_KEY') else 'NOT SET')"
+```
+
+**Import Errors**: Install required dependencies
+```bash
+python -m pip install pydantic-ai anthropic openai python-dotenv
+```
+
+**Docker Issues**: Ensure Docker daemon is running
+```bash
+docker --version
+docker-compose --version
+```
+
+## 📈 Monitoring
+
+The system includes comprehensive monitoring:
+- **Agent performance metrics**: Success rates, execution times
+- **Workflow tracking**: Request history, status monitoring
+- **Data quality metrics**: Pipeline health, validation results
+- **Infrastructure monitoring**: Resource usage, service health
+
+## 🤝 Contributing
+
+1. Follow the coding standards in `CLAUDE.md`
+2. Add tests for new features
+3. Update documentation
+4. Run validation: `python test_implementation.py`
+
+## 📄 License
+
+[Your License Here]
+
+## 🆘 Support
+
+For issues and feature requests, please [create an issue](link-to-issues) or consult the troubleshooting guide.
+
+---
+
+## 📋 Legacy Data Stack
+
+The project also includes a comprehensive Docker Compose stack for traditional data engineering workflows:
+
+### Services Included
 
 1. **PostgreSQL** - Shared database for Airbyte, Metabase, and Airflow metadata
 2. **Meltano** - Modern ELT platform with Singer taps and targets
@@ -16,7 +279,7 @@ This stack spins up the following services with all volumes mapped to `~/data-st
 8. **DuckDB HTTP** - DuckDB exposed via REST API
 9. **Traefik** - Reverse proxy with dashboard for service management
 
-## Quick Start
+### Legacy Quick Start
 
 1. Copy the environment template and configure your secrets:
    ```bash
@@ -45,168 +308,6 @@ This stack spins up the following services with all volumes mapped to `~/data-st
    - **DuckDB HTTP**: http://localhost:8002
    - **Traefik Dashboard**: http://localhost:8090
 
-## Environment Variables
+---
 
-Key environment variables to configure in your `.env` file:
-
-### Core Services
-- `POSTGRES_PASSWORD`: Password for PostgreSQL database
-- `NEO4J_PASSWORD`: Password for Neo4j (used by DataHub)
-- `DATAHUB_SECRET`: Secret key for DataHub (minimum 32 characters)
-- `AIRFLOW_USERNAME/AIRFLOW_PASSWORD`: Airflow web UI credentials
-- `AIRFLOW_FERNET_KEY`: Encryption key for Airflow (auto-generated)
-- `JUPYTER_TOKEN`: Optional token for Jupyter access
-
-### Streaming Capabilities (Optional)
-- `ENABLE_STREAMING_STACK`: Set to `true` to enable Kafka + Materialize services
-- `KAFKA_BOOTSTRAP_SERVERS`: Kafka connection string (default: `localhost:9092`)
-- `KAFKA_TOPIC_NAME`: Topic name for dbt incremental triggers (default: `dbt_incremental`)
-
-## Volume Mapping
-
-All persistent data is stored in `~/data-stack/volumes/` with subdirectories for each service:
-
-- `postgres/` - PostgreSQL data
-- `meltano/` - Meltano project files and data
-- `airflow/` - Airflow DAGs, logs, config, and plugins
-- `redis/` - Redis data for Airflow Celery
-- `datahub/` - DataHub metadata
-- `elasticsearch/` - Elasticsearch indices
-- `neo4j/` - Neo4j graph database
-- `kafka/` - Kafka logs and data
-- `great-expectations/` - GE notebooks and configurations
-- `evidence/` - Evidence.dev projects
-- `metabase/` - Metabase application data
-- `duckdb/` - DuckDB database files
-- `traefik/` - Traefik configuration
-
-## Architecture
-
-This stack provides a complete modern data platform suitable for:
-- Data ingestion and ELT pipelines with Meltano
-- Data orchestration with Apache Airflow 3.0
-- Data quality validation and monitoring
-- Data cataloging and discovery
-- Business intelligence and analytics
-- Data application development
-- Real-time streaming and micro-batch processing (optional)
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Python 3.11+ and Poetry (for local development)
-- At least 8GB RAM recommended
-- 20GB+ disk space for volumes
-
-## Dependency Management
-
-This project uses Poetry for Python dependency management with organized dependency groups. Install subsets of dependencies based on your needs:
-
-### Available Dependency Groups
-
-- **Core dependencies**: `poetry install` (dbt-core, dbt-duckdb)
-- **Development tools**: `poetry install --with dev` (ruff, black, isort, sqlfluff, pre-commit)
-- **Server/API**: `poetry install --with server` (FastAPI, uvicorn, database drivers, LLM tools)
-- **Visualization**: `poetry install --with viz` (Streamlit, pandas, plotly)
-- **ELT Platform**: `poetry install --with meltano` (Meltano, singer-sdk)
-- **Data Catalog**: `poetry install --with datahub` (acryl-datahub)
-- **Workflow Management**: `poetry install --with airflow` (apache-airflow)
-- **Jupyter**: `poetry install --with jupyter` (jupyter, jupyterlab)
-
-### Example Installation Commands
-
-```bash
-# Install core dependencies only
-poetry install
-
-# Install for local development
-poetry install --with dev
-
-# Install for data pipeline development
-poetry install --with dev,meltano,airflow
-
-# Install for visualization and analysis
-poetry install --with dev,viz,jupyter
-
-# Install everything for full stack development
-poetry install --with dev,server,viz,meltano,airflow,datahub,jupyter
-```
-
-### Managing Dependencies
-
-- Add new dependencies: `poetry add package-name --group=group-name`
-- Update lockfile: `poetry lock`
-- Export requirements: `poetry export -f requirements.txt --output requirements.txt`
-
-## Directory Structure
-
-```
-infra/terraform       # Infrastructure as Code
-docker/              # Docker configurations
-orchestration/       # Airflow DAGs and workflows
-meltano/             # Meltano project for ELT pipelines
-transformation/      # dbt models and transformations
-quality/             # Great Expectations suites
-viz/                 # Evidence, Metabase, Streamlit apps
-catalog/             # DataHub metadata configs
-mcp-server/          # Model Context Protocol server
-scripts/             # Utility scripts
-```
-
-## Streaming & Real-time Features
-
-The data stack includes optional streaming capabilities for real-time and micro-batch processing:
-
-### Enabling Streaming Features
-
-To enable streaming services, add the following to your `.env` file:
-```bash
-ENABLE_STREAMING_STACK=true
-```
-
-Then start the stack with the streaming profile:
-```bash
-docker-compose --profile streaming up -d
-```
-
-### Available Streaming Services
-
-- **Kafka Connect**: Additional streaming integrations and connectors
-- **Materialize**: Real-time data transformations and materialized views
-- **KSQL**: Stream processing with SQL (alternative to Materialize)
-- **Dagster Kafka Sensor**: Consumes Kafka messages to trigger dbt incremental runs
-
-### Streaming Workflow
-
-1. **Data Sources → Kafka**: Stream data changes to Kafka topics
-2. **Kafka → Dagster Sensor**: Kafka messages trigger Dagster asset sensors
-3. **Dagster → dbt**: Incremental dbt models process streaming data
-4. **Materialize**: Real-time materialized views for immediate analytics
-
-### Configuration Options
-
-- `KAFKA_TOPIC_NAME`: Topic for triggering dbt runs (default: `dbt_incremental`)
-- `KAFKA_BOOTSTRAP_SERVERS`: Kafka connection string (default: `localhost:9092`)
-
-### Client Feature Flags
-
-For clients requiring streaming capabilities:
-- Set `ENABLE_STREAMING_STACK=true` in environment
-- Configure Kafka topics based on data sources
-- Enable Dagster Kafka sensor in the UI (default: disabled)
-- Set up Materialize connections for real-time views
-
-### Service Endpoints (Streaming)
-
-- **Kafka Connect**: http://localhost:8083
-- **Materialize SQL**: postgresql://localhost:6875
-- **Materialize HTTP**: http://localhost:6876
-- **KSQL Server**: http://localhost:8088
-
-## Support
-
-For issues or questions, please create an issue in this repository.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+**Built with ❤️ using Claude Code and the power of AI collaboration**

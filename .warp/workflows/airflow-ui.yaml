@@ -1,0 +1,8 @@
+name: "Start Airflow UI"
+command: "docker-compose up airflow-webserver -d && echo 'Airflow UI available at http://localhost:8080 (admin/admin)'"
+tags:
+  - airflow
+  - ui
+  - data-orchestration
+description: "Start the Airflow web UI for data orchestration"
+arguments: []
