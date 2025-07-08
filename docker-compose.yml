@@ -1,5 +1,3 @@
-version: '3.8'
-
 networks:
   data-stack:
     driver: bridge
@@ -10,8 +8,8 @@ services:
     image: postgres:15
     container_name: data-stack-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-ajdoyle}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: data_stack
       POSTGRES_MULTIPLE_DATABASES: airflow,metabase,meltano
     volumes:
@@ -22,7 +20,7 @@ services:
     networks:
       - data-stack
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ajdoyle}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,7 +39,7 @@ services:
       - ./data_stack/meltano:/app
       - ./tools:/app/tools
       - ./transactions.csv:/app/transactions.csv
-      - /data/duckdb:/data/duckdb
+      - ./volumes/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
@@ -75,10 +73,10 @@ services:
     image: apache/airflow:3.0.2-python3.11
     container_name: airflow-init
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
-      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
@@ -86,20 +84,20 @@ services:
       - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
       - _AIRFLOW_DB_MIGRATE=true
       - _AIRFLOW_WWW_USER_CREATE=true
-      - _AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
-      - _AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
+      - _AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-ajdoyle}
+      - _AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD}
     volumes:
-      - /data/airflow/dags:/opt/airflow/dags
-      - /data/airflow/logs:/opt/airflow/logs
-      - /data/airflow/config:/opt/airflow/config
-      - /data/airflow/plugins:/opt/airflow/plugins
+      - ./volumes/airflow/dags:/opt/airflow/dags
+      - ./volumes/airflow/logs:/opt/airflow/logs
+      - ./volumes/airflow/config:/opt/airflow/config
+      - ./volumes/airflow/plugins:/opt/airflow/plugins
       - ./data_stack/meltano:/app/meltano
       - ./data_stack/dbt:/app/dbt
       - ./tools:/app/tools
       - ./agents:/app/agents
       - ./scripts:/app/scripts
       - ./transactions.csv:/app/transactions.csv
-      - /data/duckdb:/data/duckdb
+      - ./volumes/duckdb:/data/duckdb
     networks:
       - data-stack
     depends_on:
@@ -113,10 +111,10 @@ services:
     container_name: airflow-webserver
     command: webserver
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
-      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
@@ -124,14 +122,14 @@ services:
       - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
       - PYTHONPATH=/app:/app/tools:/app/agents
     volumes:
-      - /data/airflow/dags:/opt/airflow/dags
-      - /data/airflow/logs:/opt/airflow/logs
-      - /data/airflow/config:/opt/airflow/config
-      - /data/airflow/plugins:/opt/airflow/plugins
+      - ./volumes/airflow/dags:/opt/airflow/dags
+      - ./volumes/airflow/logs:/opt/airflow/logs
+      - ./volumes/airflow/config:/opt/airflow/config
+      - ./volumes/airflow/plugins:/opt/airflow/plugins
       - ./data_stack/airflow/dags:/opt/airflow/dags
       - ./tools:/app/tools
       - ./agents:/app/agents
-      - /data/duckdb:/data/duckdb
+      - ./volumes/duckdb:/data/duckdb
     ports:
       - "8080:8080"
     networks:
@@ -149,10 +147,10 @@ services:
     container_name: airflow-scheduler
     command: scheduler
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
-      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
@@ -178,10 +176,10 @@ services:
     container_name: airflow-worker
     command: celery worker
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
-      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
       - AIRFLOW__CORE__LOAD_EXAMPLES=false
@@ -207,10 +205,10 @@ services:
     container_name: airflow-flower
     command: celery flower
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
       - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
-      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${POSTGRES_USER:-ajdoyle}:${POSTGRES_PASSWORD}@postgres:5432/airflow
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
     ports:
       - "5555:5555"
@@ -236,12 +234,18 @@ services:
       - ${HOME}/data-stack/volumes/zookeeper/logs:/var/lib/zookeeper/log
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: data-stack-kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -254,6 +258,11 @@ services:
       - "9092:9092"
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # DataHub
   datahub-gms:
@@ -271,26 +280,29 @@ services:
       - ELASTICSEARCH_PORT=9200
       - NEO4J_HOST=neo4j:7474
       - NEO4J_URI=bolt://neo4j
-      - NEO4J_USERNAME=neo4j
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-datahub}
+      - NEO4J_USERNAME=${NEO4J_USERNAME:-ajdoyle}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
     volumes:
       - ${HOME}/data-stack/volumes/datahub/gms:/tmp
     ports:
-      - "8080:8080"
+      - "8081:8080"
     networks:
       - data-stack
     depends_on:
-      - kafka
-      - elasticsearch
-      - neo4j
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
 
   datahub-frontend:
     image: acryldata/datahub-frontend-react:v0.11.0
     container_name: datahub-frontend
     environment:
       - DATAHUB_GMS_HOST=datahub-gms
-      - DATAHUB_GMS_PORT=8080
-      - DATAHUB_SECRET=${DATAHUB_SECRET:-YouMustChangeThisSecretKey}
+      - DATAHUB_GMS_PORT=8081
+      - DATAHUB_SECRET=${DATAHUB_SECRET}
       - DATAHUB_APP_VERSION=1.0
       - DATAHUB_PLAY_MEM_BUFFER_SIZE=10MB
     volumes:
@@ -316,6 +328,11 @@ services:
       - "9200:9200"
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Qdrant vector store for similarity search
   qdrant:
@@ -341,7 +358,7 @@ services:
     image: neo4j:4.4.9
     container_name: data-stack-neo4j
     environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-datahub}
+      - NEO4J_AUTH=${NEO4J_USERNAME:-ajdoyle}/${NEO4J_PASSWORD}
       - NEO4J_dbms_default__database=graph.db
       - NEO4J_dbms_allow__upgrade=true
     volumes:
@@ -351,12 +368,18 @@ services:
       - "7687:7687"
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7474/db/data/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   schema-registry:
     image: confluentinc/cp-schema-registry:7.4.0
     container_name: data-stack-schema-registry
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
@@ -365,6 +388,11 @@ services:
       - "8081:8081"
     networks:
       - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Optional streaming services (enabled via ENABLE_STREAMING_STACK=true)
   # Kafka Connect for additional streaming integrations
@@ -509,8 +537,8 @@ services:
       MB_DB_TYPE: postgres
       MB_DB_DBNAME: metabase
       MB_DB_PORT: 5432
-      MB_DB_USER: postgres
-      MB_DB_PASS: ${POSTGRES_PASSWORD:-postgres}
+      MB_DB_USER: ${POSTGRES_USER:-ajdoyle}
+      MB_DB_PASS: ${POSTGRES_PASSWORD}
       MB_DB_HOST: postgres
       # Data source credentials (accessible via environment variables)
       SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
@@ -520,10 +548,10 @@ services:
       SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
       SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
       SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
-      POSTGRES_DATA_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DATA_PASSWORD: ${POSTGRES_PASSWORD}
       # Metabase configuration
       MB_SITE_NAME: "Freelancer Data Stack"
-      MB_ADMIN_EMAIL: "admin@datastack.local"
+      MB_ADMIN_EMAIL: ${METABASE_ADMIN_EMAIL:-ajdoyle@datastack.local}
       MB_CHECK_FOR_UPDATES: false
     volumes:
       - ${HOME}/data-stack/volumes/metabase:/metabase-data
@@ -543,7 +571,7 @@ services:
     container_name: data-stack-duckdb
     command: ["/bin/bash", "-c", "pip install duckdb pandas fastapi uvicorn pydantic && python -c 'import duckdb; print(\"DuckDB ready\")' && while true; do sleep 30; done"]
     volumes:
-      - /data/duckdb:/data
+      - ./volumes/duckdb:/data
       - ./tools:/app/tools
     environment:
       - PYTHONPATH=/app:/app/tools
@@ -561,7 +589,7 @@ services:
     image: prom/prometheus:latest
     container_name: data-stack-prometheus
     volumes:
-      - /data/prometheus:/prometheus
+      - ./volumes/prometheus:/prometheus
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
@@ -579,11 +607,11 @@ services:
     image: grafana/grafana:latest
     container_name: data-stack-grafana
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME:-ajdoyle}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
     volumes:
-      - /data/grafana:/var/lib/grafana
+      - ./volumes/grafana:/var/lib/grafana
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     ports:
@@ -613,17 +641,17 @@ services:
       - AIRFLOW_HOST=airflow-webserver
       - AIRFLOW_PORT=8080
       - DBT_PROJECT_DIR=/app/transform
-      - DATAHUB_SERVER=http://datahub-gms:8080
+      - DATAHUB_SERVER=http://datahub-gms:8081
       - DATAHUB_TOKEN=${DATAHUB_TOKEN}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
       - ENABLE_MONITORING=true
       - MONITORING_INTERVAL=30
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
     volumes:
-      - ${HOME}/data-stack/volumes/duckdb:/data/duckdb
+      - ./volumes/duckdb:/data/duckdb
       - ./transform:/app/transform
       - ./dbt_profiles:/app/dbt_profiles
     ports:
