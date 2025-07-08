@@ -1,0 +1,46 @@
+# Execute AI Data Stack PRP
+
+Run through a task list from an existing AI agent data stack PRP.
+
+## PRP File: $ARGUMENTS
+
+## Execution Process
+
+1. **Load Tasks**
+   - Read PRP task list from specified file
+   - Understand project context and architecture
+   - Validate prerequisites (Docker, Python 3.11+)
+
+2. **Execute Each Task Sequentially**
+   - Perform ACTION (implementation)
+   - Run VALIDATE (testing and verification)
+   - Fix IF_FAIL issues (error handling and retries)
+   - Update TodoWrite with progress
+
+3. **AI Agent Integration**
+   - Use DataStackEngineer agent for infrastructure tasks
+   - Leverage automated deployment and validation scripts
+   - Apply cost optimization and performance monitoring
+
+4. **Complete Checklist**
+   - Verify all tasks completed successfully
+   - Run comprehensive validation suite
+   - Check no regressions in existing functionality
+   - Generate final deployment report
+
+## Validation Framework
+
+- **Level 1**: Syntax & style validation
+- **Level 2**: Unit tests for all components
+- **Level 3**: End-to-end integration testing
+- **Data Quality**: 85%+ threshold validation
+- **Performance**: Benchmark compliance
+
+## Success Criteria
+
+- All PRP tasks completed and validated
+- Data stack deployable with single command
+- Cost target achieved (~$50/month)
+- Production-ready with monitoring and alerting
+
+Work through tasks sequentially with comprehensive validation at each step.
