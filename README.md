@@ -384,6 +384,104 @@ docker-compose ps
 
 ---
 
+## 🚀 PRP Enhancement System
+
+This project includes a comprehensive **Product Requirements Prompt (PRP)** system integrated from [PRPs-agentic-eng](https://github.com/Wirasm/PRPs-agentic-eng), specifically adapted for data stack workflows. This enhancement system is designed to maintain and improve the project through AI-driven development workflows.
+
+### Key Features
+
+#### 📋 Enhanced Command Library
+- **49 total commands** available via `.claude/commands/`
+- **28 new commands** from PRPs-agentic-eng integration
+- **Enhanced existing commands** with PRP methodology
+- **Data stack specific adaptations** for cost optimization and performance
+
+#### 🔧 PRP Execution System
+- **Interactive PRP Runner**: `python PRPs/scripts/prp_runner.py --prp-path PRPs/your-feature.md --interactive`
+- **Data Stack Helper**: `python PRPs/scripts/data_stack_prp_helper.py --prp-path PRPs/your-feature.md`
+- **Validation Gates**: 4-level validation (syntax, unit, integration, creative)
+- **Cost Optimization**: Built-in $50/month target with 90% reduction patterns
+
+#### 📝 Enhanced Templates
+- **Context-Rich Templates**: All templates include comprehensive documentation and examples
+- **Validation Loops**: Executable validation gates for AI agents
+- **Data Stack Patterns**: Agent structure, cost optimization, pipeline integration
+- **Progressive Enhancement**: Start simple, validate, then enhance
+
+### Quick Start with PRPs
+
+1. **Create a PRP** using enhanced templates:
+   ```bash
+   # Use Claude Code commands
+   /prp-base-create "Your feature description"
+   /prp-planning-create "Your planning requirements"
+   ```
+
+2. **Execute a PRP** with data stack context:
+   ```bash
+   # Interactive mode (recommended)
+   python PRPs/scripts/prp_runner.py --prp-path PRPs/your-feature.md --interactive
+
+   # Validate before execution
+   python PRPs/scripts/data_stack_prp_helper.py --prp-path PRPs/your-feature.md --validate-only
+   ```
+
+3. **Run validation** to ensure quality:
+   ```bash
+   # Comprehensive validation
+   python scripts/create_comprehensive_validation.py --run-validation --generate-report
+
+   # Quick validation
+   python scripts/create_comprehensive_validation.py --quick-check
+   ```
+
+### Command Reference
+
+#### PRP Commands
+- **`/prp-base-create`**: Create comprehensive PRP with research
+- **`/prp-base-execute`**: Execute PRP with data stack context
+- **`/prp-planning-create`**: Create planning documents with diagrams
+- **`/prp-planning-execute`**: Execute planning workflows
+- **`/prp-test-create`**: Create testing and validation PRPs
+- **`/prp-validate-create`**: Create validation frameworks
+
+#### Enhanced Data Stack Commands
+- **`/deploy-data-stack`**: Deploy complete data stack with monitoring
+- **`/monitor-data-stack`**: Monitor system health and performance
+- **`/validate-pipeline`**: Validate data pipeline functionality
+- **`/optimize-costs`**: Analyze and optimize operational costs
+- **`/agent-create`**: Create AI agents with data stack patterns
+
+#### Development Commands
+- **`/prime-core`**: Prime Claude with comprehensive project context
+- **`/review-staged-unstaged`**: Review changes using PRP methodology
+- **`/debug-agent`**: Debug AI agent functionality
+- **`/onboarding-docs`**: Generate onboarding documentation
+
+#### Code Quality Commands
+- **`/refactor-code`**: Refactor code using best practices
+- **`/review-code`**: Review code with quality gates
+- **`/generate-tests`**: Generate comprehensive test suites
+- **`/validate-architecture`**: Validate system architecture
+
+### Validation System
+
+#### Comprehensive Validation
+```bash
+# Full system validation
+python scripts/create_comprehensive_validation.py --run-validation --generate-report
+
+# Results: File structure, commands, templates, utilities, syntax, integration
+```
+
+#### Validation Levels
+1. **Syntax & Style**: ruff, mypy, black, markdownlint
+2. **Unit Testing**: pytest with data stack specific tests
+3. **Integration Testing**: Docker Compose, pipeline validation
+4. **Creative Validation**: AI agents, cost optimization, end-to-end testing
+
+---
+
 **🎉 Built with ❤️ using Claude Code and the power of AI-driven automation**
 
 *Ready to revolutionize your data stack? Deploy in minutes, save thousands monthly.*
