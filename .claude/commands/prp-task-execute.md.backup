@@ -2,9 +2,7 @@
 
 Run through a task list from an existing AI agent data stack PRP.
 
-
 ## PRP File: $ARGUMENTS
-
 
 ## Execution Process
 
@@ -30,7 +28,6 @@ Run through a task list from an existing AI agent data stack PRP.
    - Check no regressions in existing functionality
    - Generate final deployment report
 
-
 ## Validation Framework
 
 - **Level 1**: Syntax & style validation
@@ -38,7 +35,6 @@ Run through a task list from an existing AI agent data stack PRP.
 - **Level 3**: End-to-end integration testing
 - **Data Quality**: 85%+ threshold validation
 - **Performance**: Benchmark compliance
-
 
 ## Success Criteria
 
@@ -48,7 +44,3 @@ Run through a task list from an existing AI agent data stack PRP.
 - Production-ready with monitoring and alerting
 
 Work through tasks sequentially with comprehensive validation at each step.
-
-# Execute TASK PRP
-
-Run through a task list from an existing TASK PRP.

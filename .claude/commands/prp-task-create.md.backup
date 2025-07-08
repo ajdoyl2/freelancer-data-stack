@@ -2,9 +2,7 @@
 
 Generate a comprehensive task list for focused changes with validation.
 
-
 ## Task: $ARGUMENTS
-
 
 ## Analysis Process
 
@@ -26,12 +24,10 @@ Generate a comprehensive task list for focused changes with validation.
    - Check deployment considerations
    - Identify blockers
 
-
 ## PRP Generation
 
 **READ**
 Using TASK_PRP/PRPs/prp_task.md format:
-
 
 ### Context Section
 
@@ -50,7 +46,6 @@ context:
       fix: "Always do Y first"
 ```
 
-
 ### Task Structure
 
 ```
@@ -61,7 +56,6 @@ ACTION path/to/file:
   - ROLLBACK: [undo approach]
 ```
 
-
 ### Task Sequencing
 
 1. **Setup Tasks**: Prerequisites
@@ -70,14 +64,12 @@ ACTION path/to/file:
 4. **Validation**: Comprehensive tests
 5. **Cleanup**: Remove temp code
 
-
 ### Validation Strategy
 
 - Unit test after each change
 - Integration test after groups
 - Performance check if relevant
 - Security scan for sensitive areas
-
 
 ## User Interaction Points
 
@@ -91,7 +83,6 @@ ACTION path/to/file:
    - Confirm rollback approach
    - Set success criteria
 
-
 ## Critical Elements
 
 - Include debug patterns
@@ -99,11 +90,9 @@ ACTION path/to/file:
 - Note security concerns
 - Document assumptions
 
-
 ## Output
 
 Save as: `TASK_PRP/PRPs/{task-name}.md`
-
 
 ## Quality Checklist
 
