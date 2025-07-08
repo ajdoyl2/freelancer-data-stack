@@ -1,0 +1,687 @@
+version: '3.8'
+
+networks:
+  data-stack:
+    driver: bridge
+
+services:
+  # Postgres - Used by Airflow and Metabase for metadata
+  postgres:
+    image: postgres:15
+    container_name: data-stack-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: data_stack
+      POSTGRES_MULTIPLE_DATABASES: airflow,metabase,meltano
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Meltano - Data integration platform
+  meltano:
+    image: meltano/meltano:v3.7.9
+    container_name: data-stack-meltano
+    working_dir: /app
+    environment:
+      - MELTANO_DATABASE_URI=sqlite:////app/.meltano/meltano.db
+      - MELTANO_PROJECT_ROOT=/app
+      - DUCKDB_PATH=/data/duckdb/analytics.db
+      - PYTHONPATH=/app:/app/tools
+    volumes:
+      - ./data_stack/meltano:/app
+      - ./tools:/app/tools
+      - ./transactions.csv:/app/transactions.csv
+      - ./volumes/duckdb:/data/duckdb
+    networks:
+      - data-stack
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["meltano", "--help"]  # Show help and keep running
+    healthcheck:
+      test: ["CMD", "meltano", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis - Required for Airflow Celery executor
+  redis:
+    image: redis:7-alpine
+    container_name: data-stack-redis
+    volumes:
+      - ${HOME}/data-stack/volumes/redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Apache Airflow 3.0 - Data orchestration
+  airflow-init:
+    image: apache/airflow:3.0.2-python3.11
+    container_name: airflow-init
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
+      - _AIRFLOW_DB_MIGRATE=true
+      - _AIRFLOW_WWW_USER_CREATE=true
+      - _AIRFLOW_WWW_USER_USERNAME=${AIRFLOW_USERNAME:-admin}
+      - _AIRFLOW_WWW_USER_PASSWORD=${AIRFLOW_PASSWORD:-admin}
+    volumes:
+      - ./volumes/airflow/dags:/opt/airflow/dags
+      - ./volumes/airflow/logs:/opt/airflow/logs
+      - ./volumes/airflow/config:/opt/airflow/config
+      - ./volumes/airflow/plugins:/opt/airflow/plugins
+      - ./data_stack/meltano:/app/meltano
+      - ./data_stack/dbt:/app/dbt
+      - ./tools:/app/tools
+      - ./agents:/app/agents
+      - ./scripts:/app/scripts
+      - ./transactions.csv:/app/transactions.csv
+      - ./volumes/duckdb:/data/duckdb
+    networks:
+      - data-stack
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  airflow-webserver:
+    image: apache/airflow:3.0.2-python3.11
+    container_name: airflow-webserver
+    command: webserver
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
+      - PYTHONPATH=/app:/app/tools:/app/agents
+    volumes:
+      - ./volumes/airflow/dags:/opt/airflow/dags
+      - ./volumes/airflow/logs:/opt/airflow/logs
+      - ./volumes/airflow/config:/opt/airflow/config
+      - ./volumes/airflow/plugins:/opt/airflow/plugins
+      - ./data_stack/airflow/dags:/opt/airflow/dags
+      - ./tools:/app/tools
+      - ./agents:/app/agents
+      - ./volumes/duckdb:/data/duckdb
+    ports:
+      - "8080:8080"
+    networks:
+      - data-stack
+    depends_on:
+      - airflow-init
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-scheduler:
+    image: apache/airflow:3.0.2-python3.11
+    container_name: airflow-scheduler
+    command: scheduler
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
+    volumes:
+      - ${HOME}/data-stack/volumes/airflow/dags:/opt/airflow/dags
+      - ${HOME}/data-stack/volumes/airflow/logs:/opt/airflow/logs
+      - ${HOME}/data-stack/volumes/airflow/config:/opt/airflow/config
+      - ${HOME}/data-stack/volumes/airflow/plugins:/opt/airflow/plugins
+    networks:
+      - data-stack
+    depends_on:
+      - airflow-init
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "$(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-worker:
+    image: apache/airflow:3.0.2-python3.11
+    container_name: airflow-worker
+    command: celery worker
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK=true
+    volumes:
+      - ${HOME}/data-stack/volumes/airflow/dags:/opt/airflow/dags
+      - ${HOME}/data-stack/volumes/airflow/logs:/opt/airflow/logs
+      - ${HOME}/data-stack/volumes/airflow/config:/opt/airflow/config
+      - ${HOME}/data-stack/volumes/airflow/plugins:/opt/airflow/plugins
+    networks:
+      - data-stack
+    depends_on:
+      - airflow-init
+    healthcheck:
+      test: ["CMD-SHELL", "celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d celery@$${HOSTNAME}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-flower:
+    image: apache/airflow:3.0.2-python3.11
+    container_name: airflow-flower
+    command: celery flower
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/1
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY:-}
+    ports:
+      - "5555:5555"
+    networks:
+      - data-stack
+    depends_on:
+      - airflow-init
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kafka & Zookeeper for DataHub
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: data-stack-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - ${HOME}/data-stack/volumes/zookeeper/data:/var/lib/zookeeper/data
+      - ${HOME}/data-stack/volumes/zookeeper/logs:/var/lib/zookeeper/log
+    networks:
+      - data-stack
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: data-stack-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - ${HOME}/data-stack/volumes/kafka:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    networks:
+      - data-stack
+
+  # DataHub
+  datahub-gms:
+    image: acryldata/datahub-gms:v0.11.0
+    container_name: datahub-gms
+    hostname: datahub-gms
+    environment:
+      - ENTITY_REGISTRY_CONFIG_PATH=/datahub/datahub-gms/resources/entity-registry.yml
+      - DATAHUB_SERVER_TYPE=gms
+      - DATAHUB_TELEMETRY_ENABLED=false
+      - METADATA_SERVICE_AUTH_ENABLED=false
+      - KAFKA_BOOTSTRAP_SERVER=kafka:9092
+      - KAFKA_SCHEMAREGISTRY_URL=http://schema-registry:8081
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - NEO4J_HOST=neo4j:7474
+      - NEO4J_URI=bolt://neo4j
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-datahub}
+    volumes:
+      - ${HOME}/data-stack/volumes/datahub/gms:/tmp
+    ports:
+      - "8080:8080"
+    networks:
+      - data-stack
+    depends_on:
+      - kafka
+      - elasticsearch
+      - neo4j
+
+  datahub-frontend:
+    image: acryldata/datahub-frontend-react:v0.11.0
+    container_name: datahub-frontend
+    environment:
+      - DATAHUB_GMS_HOST=datahub-gms
+      - DATAHUB_GMS_PORT=8080
+      - DATAHUB_SECRET=${DATAHUB_SECRET:-YouMustChangeThisSecretKey}
+      - DATAHUB_APP_VERSION=1.0
+      - DATAHUB_PLAY_MEM_BUFFER_SIZE=10MB
+    volumes:
+      - ${HOME}/data-stack/volumes/datahub/frontend:/tmp
+    ports:
+      - "9002:9002"
+    networks:
+      - data-stack
+    depends_on:
+      - datahub-gms
+
+  # Supporting services for DataHub
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    container_name: data-stack-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - ${HOME}/data-stack/volumes/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - data-stack
+
+  # Qdrant vector store for similarity search
+  qdrant:
+    image: qdrant/qdrant:v1.9.1
+    container_name: data-stack-qdrant
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__HTTP_PORT=6333
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  neo4j:
+    image: neo4j:4.4.9
+    container_name: data-stack-neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-datahub}
+      - NEO4J_dbms_default__database=graph.db
+      - NEO4J_dbms_allow__upgrade=true
+    volumes:
+      - ${HOME}/data-stack/volumes/neo4j:/data
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    networks:
+      - data-stack
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: data-stack-schema-registry
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    ports:
+      - "8081:8081"
+    networks:
+      - data-stack
+
+  # Optional streaming services (enabled via ENABLE_STREAMING_STACK=true)
+  # Kafka Connect for additional streaming integrations
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.4.0
+    container_name: data-stack-kafka-connect
+    depends_on:
+      - kafka
+      - schema-registry
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: kafka:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_ZOOKEEPER_CONNECT: zookeeper:2181
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: "org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR"
+    ports:
+      - "8083:8083"
+    volumes:
+      - ${HOME}/data-stack/volumes/kafka-connect:/data
+    networks:
+      - data-stack
+    profiles:
+      - streaming
+
+  # Materialize for real-time data transformations
+  materialize:
+    image: materialize/materialized:latest
+    container_name: data-stack-materialize
+    environment:
+      - MZ_LOG_FILTER=info
+      - MZ_WORKERS=2
+    ports:
+      - "6875:6875"  # SQL interface
+      - "6876:6876"  # HTTP interface
+    volumes:
+      - ${HOME}/data-stack/volumes/materialize:/data
+    networks:
+      - data-stack
+    profiles:
+      - streaming
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6876/api/readyz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # KSQL Server for stream processing (optional alternative to Materialize)
+  ksqldb-server:
+    image: confluentinc/ksqldb-server:0.29.0
+    container_name: data-stack-ksqldb-server
+    depends_on:
+      - kafka
+      - schema-registry
+    environment:
+      KSQL_BOOTSTRAP_SERVERS: kafka:9092
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+    ports:
+      - "8088:8088"
+    volumes:
+      - ${HOME}/data-stack/volumes/ksqldb:/data
+    networks:
+      - data-stack
+    profiles:
+      - streaming
+
+  # KSQL CLI for interactive queries
+  ksqldb-cli:
+    image: confluentinc/ksqldb-cli:0.29.0
+    container_name: data-stack-ksqldb-cli
+    depends_on:
+      - ksqldb-server
+    entrypoint: /bin/sh
+    tty: true
+    networks:
+      - data-stack
+    profiles:
+      - streaming
+
+  # Great Expectations with Jupyter and Streamlit - DISABLED due to image issues
+  # great-expectations:
+  #   image: greatexpectations/great_expectations:latest
+  #   container_name: data-stack-great-expectations
+  #   environment:
+  #     - JUPYTER_ENABLE_LAB=yes
+  #     - JUPYTER_TOKEN=${JUPYTER_TOKEN:-}
+  #   volumes:
+  #     - ${HOME}/data-stack/volumes/great-expectations:/home/jovyan/work
+  #     - ./viz/streamlit:/home/jovyan/streamlit
+  #   ports:
+  #     - "8888:8888"
+  #     - "8501:8501"  # Streamlit port
+  #   networks:
+  #     - data-stack
+  #   command: >
+  #     bash -c "pip install streamlit pandas plotly duckdb sqlalchemy psycopg2-binary &&
+  #              jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='${JUPYTER_TOKEN:-}' &
+  #              streamlit run /home/jovyan/streamlit/app.py --server.address=0.0.0.0 --server.port=8501"
+
+  # Evidence.dev development server - DISABLED due to image issues
+  # evidence:
+  #   image: evidence-dev/evidence:latest
+  #   container_name: data-stack-evidence
+  #   environment:
+  #     - NODE_ENV=development
+  #     - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+  #     - SNOWFLAKE_USERNAME=${SNOWFLAKE_USERNAME}
+  #     - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+  #     - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
+  #     - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+  #     - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+  #     - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+  #   volumes:
+  #     - ./viz/evidence:/app
+  #     - ${HOME}/data-stack/volumes/duckdb:/data
+  #   ports:
+  #     - "3001:3000"
+  #   networks:
+  #     - data-stack
+
+  # Metabase
+  metabase:
+    image: metabase/metabase:v0.47.0
+    container_name: data-stack-metabase
+    environment:
+      # Metabase application database (for storing dashboards, users, etc.)
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-postgres}
+      MB_DB_HOST: postgres
+      # Data source credentials (accessible via environment variables)
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+      SNOWFLAKE_USERNAME: ${SNOWFLAKE_USERNAME}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
+      SNOWFLAKE_ROLE: ${SNOWFLAKE_ROLE}
+      SNOWFLAKE_WAREHOUSE: ${SNOWFLAKE_WAREHOUSE}
+      SNOWFLAKE_DATABASE: ${SNOWFLAKE_DATABASE}
+      SNOWFLAKE_SCHEMA: ${SNOWFLAKE_SCHEMA}
+      POSTGRES_DATA_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Metabase configuration
+      MB_SITE_NAME: "Freelancer Data Stack"
+      MB_ADMIN_EMAIL: "admin@datastack.local"
+      MB_CHECK_FOR_UPDATES: false
+    volumes:
+      - ${HOME}/data-stack/volumes/metabase:/metabase-data
+      - ./viz/metabase:/metabase-config
+      - ${HOME}/data-stack/volumes/duckdb:/metabase-data/duckdb
+    ports:
+      - "3002:3000"
+    networks:
+      - data-stack
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # DuckDB HTTP server - simple HTTP interface for DuckDB
+  duckdb-http:
+    image: python:3.11-slim
+    container_name: data-stack-duckdb
+    command: ["/bin/bash", "-c", "pip install duckdb pandas fastapi uvicorn pydantic && python -c 'import duckdb; print(\"DuckDB ready\")' && while true; do sleep 30; done"]
+    volumes:
+      - ./volumes/duckdb:/data
+      - ./tools:/app/tools
+    environment:
+      - PYTHONPATH=/app:/app/tools
+      - DUCKDB_PATH=/data/analytics.db
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "python", "-c", "import duckdb; duckdb.connect('/data/analytics.db').execute('SELECT 1')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: data-stack-prometheus
+    volumes:
+      - ./volumes/prometheus:/prometheus
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - data-stack
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: data-stack-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - ./volumes/grafana:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    networks:
+      - data-stack
+    depends_on:
+      - prometheus
+
+
+  # MCP Server - Model Context Protocol for AI/LLM integration
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: data-stack-mcp-server
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - APP_NAME=MCP Server
+      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+      - SNOWFLAKE_USER=${SNOWFLAKE_USERNAME}
+      - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+      - DUCKDB_PATH=/data/duckdb/main.db
+      - AIRFLOW_HOST=airflow-webserver
+      - AIRFLOW_PORT=8080
+      - DBT_PROJECT_DIR=/app/transform
+      - DATAHUB_SERVER=http://datahub-gms:8080
+      - DATAHUB_TOKEN=${DATAHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - ENABLE_MONITORING=true
+      - MONITORING_INTERVAL=30
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+    volumes:
+      - ./volumes/duckdb:/data/duckdb
+      - ./transform:/app/transform
+      - ./dbt_profiles:/app/dbt_profiles
+    ports:
+      - "8003:80"
+    networks:
+      - data-stack
+    depends_on:
+      - postgres
+      - datahub-gms
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp.rule=Host(`mcp.localhost`)"
+      - "traefik.http.services.mcp.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Traefik reverse proxy and dashboard
+  traefik:
+    image: traefik:v3.0
+    container_name: data-stack-traefik
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8090:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${HOME}/data-stack/volumes/traefik:/data
+    networks:
+      - data-stack
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+volumes:
+  postgres_data:
+  redis_data:
+  airflow_dags:
+  airflow_logs:
+  airflow_config:
+  airflow_plugins:
+  kafka_data:
+  zookeeper_data:
+  elasticsearch_data:
+  neo4j_data:
+  qdrant_data:
+  great_expectations_data:
+  evidence_data:
+  metabase_data:
+  duckdb_data:
+  traefik_data:

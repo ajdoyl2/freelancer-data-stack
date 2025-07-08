@@ -114,22 +114,3 @@ run.log
 airflow/logs/
 airflow/dags/__pycache__/
 airflow.cfg
-
-# Data files
-*.csv
-data_stack/meltano/transactions.csv
-
-# Docker volumes
-volumes/*
-!volumes/.gitkeep
-
-# Temporary files
-temp/*
-!temp/.gitkeep
-
-# Backup files
-*.backup
-
-# System files
-.DS_Store
-Thumbs.db
