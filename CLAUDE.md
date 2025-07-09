@@ -114,19 +114,23 @@ uv run pytest tests/
 Based on `pyproject.toml`:
 
 ```toml
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.12.1"           # Fast linting
-black = "^25.1.0"          # Code formatting
-sqlfluff = "^3.0.0"        # SQL linting
+[dependency-groups]
+dev = [
+    "ruff>=0.12.1,<0.13",          # Fast linting
+    "black>=25.1.0,<26",           # Code formatting
+    "sqlfluff>=3.0.0,<4",          # SQL linting
+]
 
-[tool.poetry.group.server.dependencies]
-fastapi = "^0.115.0"       # API framework
-pydantic-ai = "^0.0.9"     # AI agent framework
-duckdb = "^1.3.1"         # Analytics database
+server = [
+    "fastapi>=0.115.0,<0.116",     # API framework
+    "pydantic-ai>=0.0.9,<0.0.10",  # AI agent framework
+    "duckdb>=1.3.1,<2",            # Analytics database
+]
 
-[tool.poetry.group.meltano.dependencies]
-meltano = "^3.7.9"         # ELT platform
-singer-sdk = "^0.40.0"     # Singer protocol
+meltano = [
+    "meltano>=3.7.9,<4",           # ELT platform
+    "singer-sdk>=0.40.0,<0.41",    # Singer protocol
+]
 ```
 
 **Validation Commands**:

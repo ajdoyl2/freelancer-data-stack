@@ -351,7 +351,7 @@ class ComprehensiveValidator:
             ("venv_linux", "Virtual environment integration"),
             ("500.*line", "File size limits"),
             ("agent.*tool", "Agent structure patterns"),
-            ("poetry", "Poetry dependency management"),
+            ("uv", "UV dependency management"),
             ("data.?stack", "Data stack patterns"),
             ("cost.*optimization", "Cost optimization patterns"),
         ]

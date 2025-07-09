@@ -60,27 +60,25 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install UV
+      uses: astral-sh/setup-uv@v1
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+        version: "latest"
 
     - name: Load cached venv
-      id: cached-poetry-dependencies
+      id: cached-uv-dependencies
       uses: actions/cache@v3
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root --with dev
+      if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+      run: uv sync --group dev
 
     - name: Install additional testing dependencies
       run: |
-        poetry add requests pyyaml --group dev
+        uv add requests pyyaml --group dev
 
     - name: Create environment file
       run: |
@@ -183,7 +181,7 @@ jobs:
 
         # Initialize Meltano project if needed
         cd meltano
-        poetry run meltano install
+        uv run meltano install
         cd ..
 
     - name: Run End-to-End Pipeline Tests
@@ -196,7 +194,7 @@ jobs:
         DBT_PROJECT_DIR: ./transformation/dbt
       run: |
         echo "Starting E2E Pipeline Testing..."
-        poetry run python scripts/e2e_pipeline_test.py
+        uv run python scripts/e2e_pipeline_test.py
 
     - name: Upload test results
       if: always()

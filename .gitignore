@@ -133,3 +133,5 @@ temp/*
 # System files
 .DS_Store
 Thumbs.db
+# Large backup files
+backups/*/uv.lock

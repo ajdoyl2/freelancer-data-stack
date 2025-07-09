@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         component: [ingestion, transformation, orchestration, quality, viz]
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -27,49 +27,47 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install UV
+      uses: astral-sh/setup-uv@v1
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+        version: "latest"
 
     - name: Load cached venv
-      id: cached-poetry-dependencies
+      id: cached-uv-dependencies
       uses: actions/cache@v3
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root --with dev
+      if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+      run: uv sync --group dev
 
-    - name: Install package
-      run: poetry install --no-interaction --with dev
+    - name: Install project
+      run: uv sync --group dev
 
     - name: Run Ruff (linting)
       run: |
         if [ -d "${{ matrix.component }}" ]; then
-          poetry run ruff check ${{ matrix.component }}/ --output-format=github
+          uv run ruff check ${{ matrix.component }}/ --output-format=github
         fi
 
     - name: Run Black (formatting check)
       run: |
         if [ -d "${{ matrix.component }}" ]; then
-          poetry run black --check ${{ matrix.component }}/
+          uv run black --check ${{ matrix.component }}/
         fi
 
     - name: Run isort (import sorting check)
       run: |
         if [ -d "${{ matrix.component }}" ]; then
-          poetry run isort --check-only ${{ matrix.component }}/
+          uv run isort --check-only ${{ matrix.component }}/
         fi
 
   sql-lint:
     name: SQL Lint
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -79,21 +77,19 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install UV
+      uses: astral-sh/setup-uv@v1
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+        version: "latest"
 
     - name: Install dependencies
-      run: poetry install --no-interaction --no-root --with dev
+      run: uv sync --group dev
 
     - name: Run SQLFluff (SQL linting)
       run: |
         find . -name "*.sql" -not -path "./.venv/*" -not -path "./.*" | head -1 > /dev/null
         if [ $? -eq 0 ]; then
-          poetry run sqlfluff lint --dialect postgres --format github-annotation-native
+          uv run sqlfluff lint --dialect postgres --format github-annotation-native
         else
           echo "No SQL files found to lint"
         fi
@@ -101,7 +97,7 @@ jobs:
   docker-lint:
     name: Docker Lint
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -128,7 +124,7 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
         component: [ingestion, transformation, orchestration, quality]
-    
+
     services:
       postgres:
         image: postgres:15
@@ -152,32 +148,30 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install UV
+      uses: astral-sh/setup-uv@v1
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
+        version: "latest"
 
     - name: Load cached venv
-      id: cached-poetry-dependencies
+      id: cached-uv-dependencies
       uses: actions/cache@v3
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --no-root --with dev
+      if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+      run: uv sync --group dev
 
     - name: Run tests
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
       run: |
         if [ -d "${{ matrix.component }}/tests" ]; then
-          poetry run pytest ${{ matrix.component }}/tests/ -v --cov=${{ matrix.component }} --cov-report=xml
+          uv run pytest ${{ matrix.component }}/tests/ -v --cov=${{ matrix.component }} --cov-report=xml
         elif [ -f "${{ matrix.component }}/test_*.py" ]; then
-          poetry run pytest ${{ matrix.component }}/test_*.py -v --cov=${{ matrix.component }} --cov-report=xml
+          uv run pytest ${{ matrix.component }}/test_*.py -v --cov=${{ matrix.component }} --cov-report=xml
         else
           echo "No tests found for ${{ matrix.component }}"
         fi
@@ -194,7 +188,7 @@ jobs:
   test-docker-compose:
     name: Docker Compose Test
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -219,10 +213,10 @@ jobs:
       run: |
         # Create volumes directory
         mkdir -p $HOME/data-stack/volumes
-        
+
         # Start minimal services for testing
         docker compose -f docker-compose-test.yml up -d postgres redis
-        
+
         # Wait for services to be healthy
         timeout 60s bash -c 'until docker compose -f docker-compose-test.yml ps postgres | grep -q healthy; do sleep 2; done'
         timeout 60s bash -c 'until docker compose -f docker-compose-test.yml ps redis | grep -q healthy; do sleep 2; done'
@@ -231,7 +225,7 @@ jobs:
       run: |
         # Test PostgreSQL connection
         docker compose -f docker-compose-test.yml exec -T postgres psql -U postgres -c "SELECT version();"
-        
+
         # Test Redis connection
         docker compose -f docker-compose-test.yml exec -T redis redis-cli ping
 
@@ -244,7 +238,7 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -266,7 +260,7 @@ jobs:
   pre-commit:
     name: Pre-commit Hooks
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4

@@ -35,7 +35,7 @@ class CLAUDEEnhancer:
         self.project_patterns = {
             "environment_rules": [
                 r"venv_linux",
-                r"Poetry.*dependency",
+                r"UV.*dependency",
                 r"python_dotenv.*load_env",
             ],
             "architecture_rules": [
@@ -134,7 +134,7 @@ class CLAUDEEnhancer:
         """
         content_lower = content.lower()
 
-        for category, patterns in self.project_patterns.items():
+        for _category, patterns in self.project_patterns.items():
             for pattern in patterns:
                 if re.search(pattern, content_lower):
                     return True
@@ -383,11 +383,11 @@ class CLAUDEEnhancer:
         # Check for conflicting patterns
         conflicts = [
             ("uv", "venv_linux"),  # UV conflicts with venv_linux requirement
-            ("pip install", "poetry"),  # pip conflicts with Poetry
-            ("npm", "poetry"),  # npm conflicts with Poetry Python project
+            ("pip install", "uv"),  # pip conflicts with UV
+            ("npm", "uv"),  # npm conflicts with UV Python project
         ]
 
-        for conflict_pattern, project_requirement in conflicts:
+        for conflict_pattern, _project_requirement in conflicts:
             if conflict_pattern in rule_lower:
                 return True
 
@@ -580,7 +580,7 @@ class CLAUDEEnhancer:
 - **Validation Framework**: Progressive validation methodology
 
 ## Project-Specific Rules Preserved
-✅ **Environment Rules**: venv_linux, Poetry dependency management, python_dotenv usage
+✅ **Environment Rules**: venv_linux, UV dependency management, python_dotenv usage
 ✅ **Architecture Rules**: 500-line file limit, agent structure patterns, relative imports
 ✅ **Data Stack Rules**: SQL/Jinja/YAML/Python analytics, dbt/Meltano/Airflow integration
 ✅ **Testing Rules**: Pytest requirements, 3 test types, TASK.md/PLANNING.md integration
@@ -616,7 +616,7 @@ cp {backup_path.name} CLAUDE.md
 markdownlint CLAUDE.md
 
 # Check for project-specific patterns
-grep -i "venv_linux\|poetry\|500.*line" CLAUDE.md
+grep -i "venv_linux\|uv\|500.*line" CLAUDE.md
 
 # Verify enhanced sections
 grep -i "context.*engineering\|prp.*enhancement" CLAUDE.md

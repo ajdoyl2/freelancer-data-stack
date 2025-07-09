@@ -6,17 +6,14 @@ FROM python:3.11
 # Set the working directory in the container
 WORKDIR /app
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry==1.7.1
-
-# Configure Poetry: don't create virtual environment in Docker
-RUN poetry config virtualenvs.create false
+# Install UV
+RUN pip install --no-cache-dir uv
 
 # Copy dependency files first for better caching
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock ./
 
-# Install dependencies using Poetry
-RUN poetry install --no-dev --with server
+# Install dependencies using UV
+RUN uv sync --group server --no-dev
 
 # Copy the application code
 COPY . /app
@@ -28,4 +25,4 @@ EXPOSE 80
 ENV NAME World
 
 # Run app.py when the container launches
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
