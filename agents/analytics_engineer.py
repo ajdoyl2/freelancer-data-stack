@@ -511,7 +511,7 @@ When collaborating with other agents:
         - mart: models/marts/
         """
 
-        response = await self.run_with_retry(model_prompt)
+        await self.run_with_retry(model_prompt)
 
         return {
             "model_name": model_name,

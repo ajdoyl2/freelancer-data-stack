@@ -374,7 +374,7 @@ class TestAgentIntegration:
             agents.append(agent)
 
         assert len(agents) == 5
-        assert len(set(agent.role for agent in agents)) == 5
+        assert len({agent.role for agent in agents}) == 5
 
     @pytest.mark.asyncio
     async def test_agent_health_checks(self):

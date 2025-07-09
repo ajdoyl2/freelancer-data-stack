@@ -239,7 +239,7 @@ class AgentConfigs:
         """Get summary of current environment configuration."""
         enabled_agents = self.get_enabled_agents()
 
-        models_used = set(config.model_name for config in self.configs.values())
+        models_used = {config.model_name for config in self.configs.values()}
 
         return {
             "environment": self.environment.value,

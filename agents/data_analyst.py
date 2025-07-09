@@ -533,7 +533,7 @@ When collaborating with other agents:
         Focus on user needs and business value.
         """
 
-        response = await self.run_with_retry(dashboard_prompt)
+        await self.run_with_retry(dashboard_prompt)
 
         return {
             "dashboard_name": dashboard_name,

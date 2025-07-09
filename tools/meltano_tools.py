@@ -153,21 +153,25 @@ class MeltanoTools:
                 # Try to extract record count
                 try:
                     words = line.split()
-                    for i, word in enumerate(words):
+                    for _i, word in enumerate(words):
                         if word.isdigit():
                             metrics["records_extracted"] = int(word)
                             break
-                except:
-                    pass
+                except (ValueError, IndexError) as e:
+                    self.logger.debug(
+                        f"Could not parse records_extracted from line: {line}. Error: {e}"
+                    )
             elif "record" in line.lower() and "loaded" in line.lower():
                 try:
                     words = line.split()
-                    for i, word in enumerate(words):
+                    for _i, word in enumerate(words):
                         if word.isdigit():
                             metrics["records_loaded"] = int(word)
                             break
-                except:
-                    pass
+                except (ValueError, IndexError) as e:
+                    self.logger.debug(
+                        f"Could not parse records_loaded from line: {line}. Error: {e}"
+                    )
             elif "ERROR" in line:
                 metrics["errors"] += 1
             elif "WARN" in line:

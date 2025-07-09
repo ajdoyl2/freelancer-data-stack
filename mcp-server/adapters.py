@@ -2,18 +2,16 @@
 Plugin adapters for data tools integration
 """
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any, Optional
 from datetime import datetime
+from typing import Any
 
-import httpx
 import duckdb
+import httpx
 from dagster import DagsterInstance
 from datahub.emitter.mcp_emitter import DatahubRestEmitter
 from sqlalchemy import create_engine
-import snowflake.connector
 
 from config import settings
 
@@ -22,30 +20,30 @@ logger = logging.getLogger(__name__)
 
 class BaseAdapter(ABC):
     """Base adapter class"""
-    
+
     @abstractmethod
     async def initialize(self):
         """Initialize the adapter"""
         pass
-    
+
     @abstractmethod
     async def cleanup(self):
         """Cleanup resources"""
         pass
-    
+
     @abstractmethod
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Check adapter health"""
         pass
 
 
 class DagsterAdapter(BaseAdapter):
     """Dagster integration adapter"""
-    
+
     def __init__(self):
         self.instance = None
         self.client = None
-    
+
     async def initialize(self):
         """Initialize Dagster connection"""
         try:
@@ -58,13 +56,13 @@ class DagsterAdapter(BaseAdapter):
         except Exception as e:
             logger.error(f"Failed to initialize Dagster adapter: {e}")
             raise
-    
+
     async def cleanup(self):
         """Cleanup Dagster resources"""
         if self.client:
             await self.client.aclose()
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Check Dagster health"""
         try:
             if self.client:
@@ -73,8 +71,8 @@ class DagsterAdapter(BaseAdapter):
             return {"status": "not_initialized"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
-    
-    async def get_jobs(self) -> List[Dict[str, Any]]:
+
+    async def get_jobs(self) -> list[dict[str, Any]]:
         """Get Dagster jobs"""
         try:
             # Mock implementation - replace with actual Dagster API calls
@@ -83,14 +81,14 @@ class DagsterAdapter(BaseAdapter):
                     "name": "daily_etl_job",
                     "status": "success",
                     "last_run": datetime.now(),
-                    "description": "Daily ETL pipeline"
+                    "description": "Daily ETL pipeline",
                 },
                 {
-                    "name": "hourly_sync_job", 
+                    "name": "hourly_sync_job",
                     "status": "running",
                     "last_run": datetime.now(),
-                    "description": "Hourly data sync"
-                }
+                    "description": "Hourly data sync",
+                },
             ]
         except Exception as e:
             logger.error(f"Error getting Dagster jobs: {e}")
@@ -99,20 +97,20 @@ class DagsterAdapter(BaseAdapter):
 
 class DbtAdapter(BaseAdapter):
     """dbt integration adapter"""
-    
+
     def __init__(self):
         self.project_dir = settings.dbt_project_dir
         self.profiles_dir = settings.dbt_profiles_dir
-    
+
     async def initialize(self):
         """Initialize dbt connection"""
         logger.info("dbt adapter initialized")
-    
+
     async def cleanup(self):
         """Cleanup dbt resources"""
         pass
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Check dbt health"""
         try:
             if self.project_dir:
@@ -120,8 +118,8 @@ class DbtAdapter(BaseAdapter):
             return {"status": "not_configured"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
-    
-    async def get_models(self) -> List[Dict[str, Any]]:
+
+    async def get_models(self) -> list[dict[str, Any]]:
         """Get dbt models"""
         try:
             # Mock implementation - replace with actual dbt manifest parsing
@@ -131,15 +129,15 @@ class DbtAdapter(BaseAdapter):
                     "path": "models/dimensions/dim_customers.sql",
                     "status": "success",
                     "last_run": datetime.now(),
-                    "description": "Customer dimension table"
+                    "description": "Customer dimension table",
                 },
                 {
                     "name": "fct_orders",
-                    "path": "models/facts/fct_orders.sql", 
+                    "path": "models/facts/fct_orders.sql",
                     "status": "success",
                     "last_run": datetime.now(),
-                    "description": "Orders fact table"
-                }
+                    "description": "Orders fact table",
+                },
             ]
         except Exception as e:
             logger.error(f"Error getting dbt models: {e}")
@@ -148,15 +146,21 @@ class DbtAdapter(BaseAdapter):
 
 class SnowflakeAdapter(BaseAdapter):
     """Snowflake integration adapter"""
-    
+
     def __init__(self):
         self.connection = None
         self.engine = None
-    
+
     async def initialize(self):
         """Initialize Snowflake connection"""
         try:
-            if all([settings.snowflake_account, settings.snowflake_user, settings.snowflake_password]):
+            if all(
+                [
+                    settings.snowflake_account,
+                    settings.snowflake_user,
+                    settings.snowflake_password,
+                ]
+            ):
                 # Create connection string
                 conn_string = (
                     f"snowflake://{settings.snowflake_user}:{settings.snowflake_password}"
@@ -170,13 +174,13 @@ class SnowflakeAdapter(BaseAdapter):
         except Exception as e:
             logger.error(f"Failed to initialize Snowflake adapter: {e}")
             raise
-    
+
     async def cleanup(self):
         """Cleanup Snowflake resources"""
         if self.engine:
             self.engine.dispose()
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Check Snowflake health"""
         try:
             if self.engine:
@@ -187,8 +191,8 @@ class SnowflakeAdapter(BaseAdapter):
             return {"status": "not_configured"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
-    
-    async def get_warehouses(self) -> List[Dict[str, Any]]:
+
+    async def get_warehouses(self) -> list[dict[str, Any]]:
         """Get Snowflake warehouses"""
         try:
             if self.engine:
@@ -196,12 +200,14 @@ class SnowflakeAdapter(BaseAdapter):
                     result = conn.execute("SHOW WAREHOUSES")
                     warehouses = []
                     for row in result:
-                        warehouses.append({
-                            "name": row[0],
-                            "size": row[2],
-                            "state": row[1],
-                            "auto_suspend": row[6]
-                        })
+                        warehouses.append(
+                            {
+                                "name": row[0],
+                                "size": row[2],
+                                "state": row[1],
+                                "auto_suspend": row[6],
+                            }
+                        )
                     return warehouses
             return []
         except Exception as e:
@@ -211,10 +217,10 @@ class SnowflakeAdapter(BaseAdapter):
 
 class DuckDBAdapter(BaseAdapter):
     """DuckDB integration adapter"""
-    
+
     def __init__(self):
         self.connection = None
-    
+
     async def initialize(self):
         """Initialize DuckDB connection"""
         try:
@@ -223,13 +229,13 @@ class DuckDBAdapter(BaseAdapter):
         except Exception as e:
             logger.error(f"Failed to initialize DuckDB adapter: {e}")
             raise
-    
+
     async def cleanup(self):
         """Cleanup DuckDB resources"""
         if self.connection:
             self.connection.close()
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Check DuckDB health"""
         try:
             if self.connection:
@@ -238,15 +244,15 @@ class DuckDBAdapter(BaseAdapter):
             return {"status": "not_initialized"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
-    
-    async def get_tables(self) -> List[Dict[str, Any]]:
+
+    async def get_tables(self) -> list[dict[str, Any]]:
         """Get DuckDB tables"""
         try:
             if self.connection:
                 result = self.connection.execute(
                     "SELECT table_name, table_schema FROM information_schema.tables"
                 ).fetchall()
-                
+
                 tables = []
                 for row in result:
                     table_name, schema = row
@@ -258,14 +264,16 @@ class DuckDBAdapter(BaseAdapter):
                         row_count = count_result[0] if count_result else None
                     except:
                         row_count = None
-                    
-                    tables.append({
-                        "name": table_name,
-                        "schema": schema,
-                        "row_count": row_count,
-                        "columns": []  # Could be populated with column info
-                    })
-                
+
+                    tables.append(
+                        {
+                            "name": table_name,
+                            "schema": schema,
+                            "row_count": row_count,
+                            "columns": [],  # Could be populated with column info
+                        }
+                    )
+
                 return tables
             return []
         except Exception as e:
@@ -275,11 +283,11 @@ class DuckDBAdapter(BaseAdapter):
 
 class DataHubAdapter(BaseAdapter):
     """DataHub integration adapter"""
-    
+
     def __init__(self):
         self.emitter = None
         self.client = None
-    
+
     async def initialize(self):
         """Initialize DataHub connection"""
         try:
@@ -292,13 +300,13 @@ class DataHubAdapter(BaseAdapter):
         except Exception as e:
             logger.error(f"Failed to initialize DataHub adapter: {e}")
             raise
-    
+
     async def cleanup(self):
         """Cleanup DataHub resources"""
         if self.client:
             await self.client.aclose()
-    
-    async def health_check(self) -> Dict[str, Any]:
+
+    async def health_check(self) -> dict[str, Any]:
         """Check DataHub health"""
         try:
             if self.client:
@@ -307,8 +315,8 @@ class DataHubAdapter(BaseAdapter):
             return {"status": "not_configured"}
         except Exception as e:
             return {"status": "unhealthy", "error": str(e)}
-    
-    async def get_datasets(self) -> List[Dict[str, Any]]:
+
+    async def get_datasets(self) -> list[dict[str, Any]]:
         """Get DataHub datasets"""
         try:
             # Mock implementation - replace with actual DataHub API calls
@@ -318,15 +326,15 @@ class DataHubAdapter(BaseAdapter):
                     "name": "customer_data",
                     "platform": "snowflake",
                     "description": "Customer information dataset",
-                    "tags": ["customer", "pii"]
+                    "tags": ["customer", "pii"],
                 },
                 {
                     "urn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,orders,PROD)",
                     "name": "orders",
-                    "platform": "duckdb", 
+                    "platform": "duckdb",
                     "description": "Order transactions",
-                    "tags": ["orders", "transactions"]
-                }
+                    "tags": ["orders", "transactions"],
+                },
             ]
         except Exception as e:
             logger.error(f"Error getting DataHub datasets: {e}")

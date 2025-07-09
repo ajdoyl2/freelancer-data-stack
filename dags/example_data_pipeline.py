@@ -12,41 +12,42 @@ Created: 2024-06-30
 """
 
 from datetime import datetime, timedelta
+
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
 
 # Default arguments for the DAG
 default_args = {
-    'owner': 'data-team',
-    'depends_on_past': False,
-    'start_date': datetime(2024, 6, 30),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "data-team",
+    "depends_on_past": False,
+    "start_date": datetime(2024, 6, 30),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # Define the DAG
 dag = DAG(
-    'example_data_pipeline',
+    "example_data_pipeline",
     default_args=default_args,
-    description='Example data pipeline for the freelancer data stack',
+    description="Example data pipeline for the freelancer data stack",
     schedule_interval=timedelta(days=1),
     catchup=False,
-    tags=['example', 'data-pipeline', 'freelancer-stack'],
+    tags=["example", "data-pipeline", "freelancer-stack"],
 )
 
 # Task 1: Start pipeline
 start_pipeline = DummyOperator(
-    task_id='start_pipeline',
+    task_id="start_pipeline",
     dag=dag,
 )
 
 # Task 2: Extract data (example using Airbyte)
 extract_data = BashOperator(
-    task_id='extract_data',
+    task_id="extract_data",
     bash_command="""
     echo "Starting data extraction..."
     # Example: Trigger Airbyte sync via API
@@ -57,6 +58,7 @@ extract_data = BashOperator(
     """,
     dag=dag,
 )
+
 
 # Task 3: Transform data (example using dbt or custom Python)
 def transform_data():
@@ -69,15 +71,16 @@ def transform_data():
     print("Data transformation completed")
     return "transformation_complete"
 
+
 transform_data_task = PythonOperator(
-    task_id='transform_data',
+    task_id="transform_data",
     python_callable=transform_data,
     dag=dag,
 )
 
 # Task 4: Data quality checks with Great Expectations
 validate_data = BashOperator(
-    task_id='validate_data',
+    task_id="validate_data",
     bash_command="""
     echo "Running data quality checks..."
     # Example: Run Great Expectations validation
@@ -89,7 +92,7 @@ validate_data = BashOperator(
 
 # Task 5: Load to DuckDB for analytics
 load_to_analytics = BashOperator(
-    task_id='load_to_analytics',
+    task_id="load_to_analytics",
     bash_command="""
     echo "Loading data to DuckDB for analytics..."
     # Example: Load data to DuckDB via HTTP API
@@ -103,7 +106,7 @@ load_to_analytics = BashOperator(
 
 # Task 6: Update DataHub metadata
 update_catalog = BashOperator(
-    task_id='update_catalog',
+    task_id="update_catalog",
     bash_command="""
     echo "Updating data catalog..."
     # Example: Push metadata to DataHub
@@ -115,9 +118,17 @@ update_catalog = BashOperator(
 
 # Task 7: End pipeline
 end_pipeline = DummyOperator(
-    task_id='end_pipeline',
+    task_id="end_pipeline",
     dag=dag,
 )
 
 # Define task dependencies
-start_pipeline >> extract_data >> transform_data_task >> validate_data >> load_to_analytics >> update_catalog >> end_pipeline
+(
+    start_pipeline
+    >> extract_data
+    >> transform_data_task
+    >> validate_data
+    >> load_to_analytics
+    >> update_catalog
+    >> end_pipeline
+)

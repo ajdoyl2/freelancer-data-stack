@@ -280,7 +280,7 @@ services:
       - ELASTICSEARCH_PORT=9200
       - NEO4J_HOST=neo4j:7474
       - NEO4J_URI=bolt://neo4j
-      - NEO4J_USERNAME=${NEO4J_USERNAME:-ajdoyle}
+      - NEO4J_USERNAME=neo4j
       - NEO4J_PASSWORD=${NEO4J_PASSWORD}
     volumes:
       - ${HOME}/data-stack/volumes/datahub/gms:/tmp
@@ -358,7 +358,7 @@ services:
     image: neo4j:4.4.9
     container_name: data-stack-neo4j
     environment:
-      - NEO4J_AUTH=${NEO4J_USERNAME:-ajdoyle}/${NEO4J_PASSWORD}
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
       - NEO4J_dbms_default__database=graph.db
       - NEO4J_dbms_allow__upgrade=true
     volumes:
@@ -369,7 +369,7 @@ services:
     networks:
       - data-stack
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7474/db/data/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7474/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -625,8 +625,8 @@ services:
   # MCP Server - Model Context Protocol for AI/LLM integration
   mcp-server:
     build:
-      context: ./mcp-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: mcp-server/Dockerfile
     container_name: data-stack-mcp-server
     environment:
       - DEBUG=${DEBUG:-false}

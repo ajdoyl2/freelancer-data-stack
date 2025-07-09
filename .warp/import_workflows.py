@@ -4,13 +4,14 @@ Script to import AI agent workflows into Warp's database.
 This avoids the need to manually add each workflow through the UI.
 """
 
-import sqlite3
 import json
-import os
+import sqlite3
 from pathlib import Path
 
 # Warp database path
-WARP_DB_PATH = Path.home() / "Library/Application Support/dev.warp.Warp-Stable/warp.sqlite"
+WARP_DB_PATH = (
+    Path.home() / "Library/Application Support/dev.warp.Warp-Stable/warp.sqlite"
+)
 
 # Workflows to add
 WORKFLOWS = [
@@ -50,7 +51,7 @@ Provide specific recommendations with before/after code examples where helpful.'
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
+        "environment_variables": None,
     },
     {
         "name": "Data Pipeline Design",
@@ -90,7 +91,7 @@ Provide specific code examples for Dagster assets and dbt models.'""",
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
+        "environment_variables": None,
     },
     {
         "name": "AI Debug Assistant",
@@ -127,7 +128,7 @@ Please provide actionable steps with specific commands where applicable.'""",
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
+        "environment_variables": None,
     },
     {
         "name": "Production Issue Triage",
@@ -175,7 +176,7 @@ Provide step-by-step recovery plan with rollback options.'""",
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
+        "environment_variables": None,
     },
     {
         "name": "dbt Model Development",
@@ -218,7 +219,7 @@ Provide complete model code with tests and documentation.'""",
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
+        "environment_variables": None,
     },
     {
         "name": "Dagster Asset Creation",
@@ -261,16 +262,15 @@ Provide complete asset code with tests and documentation.'""",
         "author": None,
         "author_url": None,
         "shells": [],
-        "environment_variables": None
-    }
+        "environment_variables": None,
+    },
 ]
 
 
 def workflow_exists(conn, name):
     """Check if a workflow with the given name already exists."""
     cursor = conn.execute(
-        "SELECT COUNT(*) FROM workflows WHERE json_extract(data, '$.name') = ?",
-        (name,)
+        "SELECT COUNT(*) FROM workflows WHERE json_extract(data, '$.name') = ?", (name,)
     )
     return cursor.fetchone()[0] > 0
 
@@ -278,16 +278,13 @@ def workflow_exists(conn, name):
 def add_workflow(conn, workflow_data):
     """Add a workflow to the Warp database."""
     workflow_json = json.dumps(workflow_data)
-    
+
     if workflow_exists(conn, workflow_data["name"]):
         print(f"⚠️  Workflow '{workflow_data['name']}' already exists, skipping...")
         return False
-    
+
     try:
-        conn.execute(
-            "INSERT INTO workflows (data) VALUES (?)",
-            (workflow_json,)
-        )
+        conn.execute("INSERT INTO workflows (data) VALUES (?)", (workflow_json,))
         print(f"✅ Added workflow: '{workflow_data['name']}'")
         return True
     except Exception as e:
@@ -301,30 +298,30 @@ def main():
         print(f"❌ Warp database not found at: {WARP_DB_PATH}")
         print("Make sure Warp is installed and has been run at least once.")
         return
-    
+
     print(f"🔧 Connecting to Warp database: {WARP_DB_PATH}")
-    
+
     try:
         conn = sqlite3.connect(WARP_DB_PATH)
-        
+
         print(f"\n📝 Importing {len(WORKFLOWS)} AI agent workflows...")
-        
+
         added_count = 0
         for workflow in WORKFLOWS:
             if add_workflow(conn, workflow):
                 added_count += 1
-        
+
         conn.commit()
         conn.close()
-        
+
         print(f"\n🎉 Successfully imported {added_count} workflows!")
-        print(f"📱 Open Warp and press Cmd+P to access your new AI workflows.")
-        
+        print("📱 Open Warp and press Cmd+P to access your new AI workflows.")
+
         if added_count > 0:
-            print(f"\n🎯 Try these workflows:")
+            print("\n🎯 Try these workflows:")
             for workflow in WORKFLOWS[:3]:  # Show first 3
                 print(f"   • {workflow['name']}")
-    
+
     except Exception as e:
         print(f"❌ Error connecting to Warp database: {e}")
         print("Make sure Warp is not running while importing workflows.")
