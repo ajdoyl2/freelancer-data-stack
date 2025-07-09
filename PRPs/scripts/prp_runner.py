@@ -36,7 +36,7 @@ META_HEADER = """Enhanced Data Stack PRP Runner
 Data Stack Project-Specific Instructions:
 - Use venv_linux for ALL Python commands
 - Follow 500-line file limit rule
-- Use Poetry for dependency management
+- Use UV for dependency management
 - Integrate with existing agent patterns (agent.py, tools.py, prompts.py)
 - Target $50/month operational cost
 - Maintain 0.85 quality threshold
@@ -60,7 +60,7 @@ Ingest and understand the Product Requirement Prompt (PRP) below in detail.
     - **Follow agent structure**: agent.py (logic), tools.py (functions), prompts.py (system prompts)
     - **Respect 500-line limit** - refactor by splitting into modules if needed
     - Follow existing patterns in data_stack/ directory
-    - Use Poetry for dependency management
+    - Use UV for dependency management
     - Integrate with existing DuckDB, Meltano, dbt, Airflow patterns
     - Consider cost optimization for data processing (~90% cost reduction patterns)
     - Use type hints and pydantic for data validation
@@ -154,7 +154,7 @@ def build_prompt(prp_path: Path) -> str:
 
 def stream_json_output(process: subprocess.Popen) -> Iterator[dict[str, Any]]:
     """Parse streaming JSON output line by line."""
-    for line in process.stdout:
+    for line in process.stdout or []:
         line = line.strip()
         if line:
             try:
@@ -256,7 +256,7 @@ def run_model(
                 # Wait for process to complete
                 process.wait()
                 if process.returncode != 0:
-                    stderr = process.stderr.read()
+                    stderr = process.stderr.read() if process.stderr else ""
                     print(
                         f"Claude Code failed with exit code {process.returncode}",
                         file=sys.stderr,

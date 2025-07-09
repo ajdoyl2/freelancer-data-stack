@@ -1,0 +1,116 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PYTHONPATH
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Poetry cache
+.poetry-cache/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Terraform secrets and sensitive files
+infra/terraform/environments/*/secrets.tfvars
+infra/terraform/environments/*/backend.tf
+infra/terraform/backend.tf
+
+# Docker
+.dockerignore
+
+# Database
+*.db
+*.sqlite3
+
+# Secrets and environment variables
+.env
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+
+# dbt
+dbt_packages/
+target/
+profiles.yml
+
+
+# Great Expectations
+.great_expectations/uncommitted/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Node modules (for Evidence)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Meltano
+.meltano/
+run.log
+
+# Airflow
+airflow/logs/
+airflow/dags/__pycache__/
+airflow.cfg

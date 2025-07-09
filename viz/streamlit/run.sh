@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 # Install dependencies if needed
 echo "🔧 Installing dependencies..."
 cd ../../  # Go to project root
-poetry install --with viz
+uv sync --group viz
 cd viz/streamlit/  # Return to streamlit directory
 
 # Set environment variables from .env if it exists
@@ -26,7 +26,7 @@ fi
 
 # Run Streamlit
 echo "🚀 Launching Streamlit..."
-cd ../../  # Go to project root to use poetry
-poetry run streamlit run viz/streamlit/app.py --server.address=0.0.0.0 --server.port=8501
+cd ../../  # Go to project root to use uv
+uv run streamlit run viz/streamlit/app.py --server.address=0.0.0.0 --server.port=8501
 
 echo "✨ Streamlit application started successfully!"

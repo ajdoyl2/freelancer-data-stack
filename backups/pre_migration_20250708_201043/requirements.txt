@@ -1,0 +1,22 @@
+# Core AI Agent Dependencies
+pydantic-ai>=0.0.12
+anthropic>=0.40.0
+openai>=1.54.0
+python-dotenv>=1.0.0
+
+# Web API Dependencies
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+
+# Testing Dependencies
+pytest>=8.4.0
+pytest-asyncio>=1.0.0
+
+# Data Processing
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Utilities
+python-dateutil>=2.9.0
+requests>=2.32.0

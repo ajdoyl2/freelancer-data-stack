@@ -1,0 +1,27 @@
+{
+  "backup_timestamp": "2025-07-07T21:40:14.324678",
+  "backup_id": "docker_compose_backup_20250707_214014",
+  "files_backed_up": [
+    "docker-compose.yml",
+    "docker-compose.agents.yml",
+    ".env",
+    ".gitignore",
+    ".env.example"
+  ],
+  "original_credentials": {
+    "POSTGRES_USER": "postgres",
+    "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-postgres}",
+    "AIRFLOW_USERNAME": "${AIRFLOW_USERNAME:-admin}",
+    "AIRFLOW_PASSWORD": "${AIRFLOW_PASSWORD:-admin}",
+    "GF_SECURITY_ADMIN_USER": "admin",
+    "GF_SECURITY_ADMIN_PASSWORD": "${GRAFANA_PASSWORD:-admin}",
+    "NEO4J_AUTH": "neo4j/${NEO4J_PASSWORD:-datahub}",
+    "NEO4J_USERNAME": "neo4j",
+    "DATAHUB_SECRET": "${DATAHUB_SECRET:-YouMustChangeThisSecretKey}",
+    "MB_DB_USER": "postgres",
+    "MB_ADMIN_EMAIL": "admin@datastack.local",
+    "SECRET_KEY": "${SECRET_KEY:-your-secret-key-here}"
+  },
+  "backup_directory": "/Users/ajdoyle/data-stack/freelancer-data-stack/backups/docker_compose_backup_20250707_214014",
+  "rollback_script_path": "/Users/ajdoyle/data-stack/freelancer-data-stack/backups/docker_compose_backup_20250707_214014/rollback.sh"
+}
