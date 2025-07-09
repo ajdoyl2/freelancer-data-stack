@@ -404,12 +404,12 @@ class DataStackDeployer:
         self.logger.info("Preparing directories")
 
         directories = [
-            "/data/duckdb",
-            "/data/meltano",
-            "/data/airflow/logs",
-            "/data/airflow/dags",
-            "/data/grafana",
-            "/data/prometheus",
+            "volumes/duckdb",
+            "volumes/meltano",
+            "volumes/airflow/logs",
+            "volumes/airflow/dags",
+            "volumes/grafana",
+            "volumes/prometheus",
         ]
 
         created_dirs = []

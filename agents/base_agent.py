@@ -179,7 +179,7 @@ class BaseAgent(ABC):
         # Basic validation - check if model is accessible
         try:
             # Simple test query to validate model connectivity
-            test_response = await self._agent.run("Hello, can you respond?")
+            await self._agent.run("Hello, can you respond?")
             results.append(
                 ValidationResult(
                     check_name="model_connectivity",

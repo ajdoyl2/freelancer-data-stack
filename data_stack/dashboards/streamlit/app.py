@@ -8,6 +8,7 @@ Provides real-time insights into transactions, data quality, and pipeline perfor
 import asyncio
 import logging
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -245,7 +246,7 @@ class DataDashboard:
                     x=daily_data["transaction_date"],
                     y=daily_data["amount_abs"],
                     name="Volume ($)",
-                    line=dict(color="#1f77b4"),
+                    line={"color": "#1f77b4"},
                 ),
                 secondary_y=False,
             )
@@ -255,7 +256,7 @@ class DataDashboard:
                     x=daily_data["transaction_date"],
                     y=daily_data["transaction_id"],
                     name="Count",
-                    line=dict(color="#ff7f0e"),
+                    line={"color": "#ff7f0e"},
                 ),
                 secondary_y=True,
             )
@@ -360,7 +361,7 @@ class DataDashboard:
             )
 
             fig.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                polar={"radialaxis": {"visible": True, "range": [0, 1]}},
                 showlegend=False,
                 title="Data Quality Radar",
                 height=300,
@@ -479,7 +480,7 @@ class DataDashboard:
             filtered_df = filtered_df[filtered_df["transaction_flow"] == flow_filter]
 
         if high_value_only:
-            filtered_df = filtered_df[filtered_df["is_high_value"] == True]
+            filtered_df = filtered_df[filtered_df["is_high_value"]]
 
         # Display table
         display_columns = [

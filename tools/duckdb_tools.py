@@ -217,11 +217,6 @@ class DuckDBTools:
                 ).fetchone()
 
                 # Get table size
-                size_query = f"""
-                SELECT
-                    pg_size_pretty(pg_total_relation_size('{schema}.{table_name}')) as table_size,
-                    pg_size_pretty(pg_relation_size('{schema}.{table_name}')) as table_size_without_indexes
-                """
 
                 # Basic statistics for numeric columns
                 numeric_stats = {}

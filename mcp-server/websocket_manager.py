@@ -4,9 +4,8 @@ WebSocket manager for real-time updates and alerting
 
 import asyncio
 import logging
-from typing import Dict
-from fastapi import WebSocket, WebSocketDisconnect
 
+from fastapi import WebSocket, WebSocketDisconnect
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ class WebSocketManager:
     """Manages WebSocket connections and broadcasting"""
 
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
+        self.active_connections: dict[str, WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, client_id: str):
         """Connect a client WebSocket"""
@@ -49,4 +48,3 @@ class WebSocketManager:
             # Placeholder for real monitoring and alerting logic.
             await asyncio.sleep(30)
             await self.broadcast("Hello from MCP Server!")
-
