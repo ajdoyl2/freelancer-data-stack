@@ -1,0 +1,181 @@
+version: '3.8'
+
+networks:
+  data-stack:
+    external: true
+
+services:
+  # PostgreSQL MCP Server
+  postgres-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: postgres-mcp/Dockerfile
+    container_name: postgres-mcp
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-ajdoyle}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=data_stack
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "9000:9000"
+    networks:
+      - data-stack
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # DuckDB MCP Server (placeholder)
+  duckdb-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: duckdb-mcp/Dockerfile
+    container_name: duckdb-mcp
+    environment:
+      - DUCKDB_PATH=/data/duckdb/analytics.db
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./volumes/duckdb:/data/duckdb
+    ports:
+      - "9020:9020"
+    networks:
+      - data-stack
+    profiles:
+      - mcp-full
+
+  # Snowflake MCP Server (placeholder)
+  snowflake-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: snowflake-mcp/Dockerfile
+    container_name: snowflake-mcp
+    environment:
+      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+      - SNOWFLAKE_USER=${SNOWFLAKE_USERNAME}
+      - SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD}
+      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "9010:9010"
+    networks:
+      - data-stack
+    profiles:
+      - mcp-full
+
+  # dbt MCP Server (placeholder)
+  dbt-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: dbt-mcp/Dockerfile
+    container_name: dbt-mcp
+    environment:
+      - DBT_PROJECT_DIR=/app/transform
+      - DBT_PROFILES_DIR=/app/dbt_profiles
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - ./transform:/app/transform
+      - ./dbt_profiles:/app/dbt_profiles
+    ports:
+      - "9030:9030"
+    networks:
+      - data-stack
+    profiles:
+      - mcp-full
+
+  # Airflow MCP Server (placeholder)
+  airflow-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: airflow-mcp/Dockerfile
+    container_name: airflow-mcp
+    environment:
+      - AIRFLOW_HOST=airflow-webserver
+      - AIRFLOW_PORT=8080
+      - AIRFLOW_USERNAME=${AIRFLOW_USERNAME}
+      - AIRFLOW_PASSWORD=${AIRFLOW_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "9040:9040"
+    networks:
+      - data-stack
+    depends_on:
+      - airflow-webserver
+    profiles:
+      - mcp-full
+
+  # DataHub MCP Server (placeholder)
+  datahub-mcp:
+    build:
+      context: ./mcp-servers
+      dockerfile: datahub-mcp/Dockerfile
+    container_name: datahub-mcp
+    environment:
+      - DATAHUB_GMS_HOST=datahub-gms
+      - DATAHUB_GMS_PORT=8081
+      - DATAHUB_TOKEN=${DATAHUB_TOKEN}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "9050:9050"
+    networks:
+      - data-stack
+    depends_on:
+      - datahub-gms
+    profiles:
+      - mcp-full
+
+  # Quick Data MCP Server
+  quick-data-mcp:
+    build:
+      context: ./mcp-servers/quick-data-mcp
+      dockerfile: Dockerfile
+    container_name: quick-data-mcp
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      - DATA_DIRECTORY=/data
+    ports:
+      - "9060:8000"
+    volumes:
+      - ./volumes/quick-data:/data
+      - ./mcp-servers/quick-data-mcp/quick-data-mcp:/app/quick-data-mcp
+    networks:
+      - data-stack
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MCP Gateway
+  mcp-gateway:
+    build:
+      context: ./mcp-servers
+      dockerfile: gateway/Dockerfile
+    container_name: mcp-gateway
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      - REDIS_HOST=redis
+      - RATE_LIMIT_PER_MINUTE=100
+    ports:
+      - "8000:8000"
+    networks:
+      - data-stack
+    depends_on:
+      - redis
+      - postgres-mcp
+    profiles:
+      - mcp-full
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

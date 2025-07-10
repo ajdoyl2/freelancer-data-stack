@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    # Quick Data MCP configuration
+    quick_data_mcp_host: str = "quick-data-mcp"
+    quick_data_mcp_port: int = 8000
+
     class Config:
         env_file = ".env"
         case_sensitive = False

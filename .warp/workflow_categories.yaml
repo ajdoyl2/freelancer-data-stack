@@ -1,0 +1,190 @@
+# Workflow Categories Configuration
+# This file organizes Warp workflows into logical categories for better discovery and maintenance.
+# Each category groups related workflows based on their function and purpose.
+
+version: "1.0.0"
+last_updated: "2024-01-20"
+
+categories:
+  prp_creation:
+    name: "PRP Creation"
+    description: "Workflows for creating Product Requirements and Plans (PRPs)"
+    color: "#4CAF50"  # Green for creation
+    icon: "📝"
+    workflows:
+      - name: "prp-base-create"
+        file: "prp-base-create.yaml"
+        description: "Generate complete PRP for feature implementation with deep research"
+        tags: ["prp", "create", "research"]
+
+      - name: "prp-planning-create"
+        file: "prp-planning-create.yaml"
+        description: "Transform rough ideas into comprehensive PRDs with visual documentation"
+        tags: ["prp", "planning", "prd", "visual"]
+
+      - name: "task-list-init"
+        file: "task-list-init.yaml"
+        description: "Create comprehensive task list for building hackathon projects"
+        tags: ["prp", "tasks", "checklist"]
+
+  prp_execution:
+    name: "PRP Execution"
+    description: "Workflows for executing and implementing PRPs"
+    color: "#FF9800"  # Orange for execution
+    icon: "🚀"
+    workflows:
+      - name: "prp-base-execute"
+        file: "prp-base-execute.yaml"
+        description: "Implement features using PRP files with comprehensive validation"
+        tags: ["prp", "execute", "implement"]
+
+  spec_prp:
+    name: "SPEC PRP"
+    description: "Workflows for creating specifications and contracts"
+    color: "#2196F3"  # Blue for specifications
+    icon: "📋"
+    workflows:
+      - name: "api-contract-define"
+        file: "api-contract-define.yaml"
+        description: "Create detailed API contract specification for backend/frontend coordination"
+        tags: ["spec", "api", "contract"]
+
+  data_stack:
+    name: "Data Stack"
+    description: "Workflows for data pipeline operations and management"
+    color: "#9C27B0"  # Purple for data
+    icon: "🔄"
+    workflows:
+      - name: "start-data-stack"
+        file: "start-data-stack.yaml"
+        description: "Start the complete data stack services"
+        tags: ["data", "stack", "start"]
+
+      - name: "stop-data-stack"
+        file: "stop-data-stack.yaml"
+        description: "Stop the data stack services"
+        tags: ["data", "stack", "stop"]
+
+      - name: "check-stack-status"
+        file: "check-stack-status.yaml"
+        description: "Check the status of data stack services"
+        tags: ["data", "stack", "status"]
+
+      - name: "view-stack-logs"
+        file: "view-stack-logs.yaml"
+        description: "View logs from data stack services"
+        tags: ["data", "stack", "logs"]
+
+      - name: "dbt-comprehensive"
+        file: "dbt-comprehensive.yaml"
+        description: "Run comprehensive dbt operations"
+        tags: ["data", "dbt", "transformation"]
+
+      - name: "dbt-run-models"
+        file: "dbt-run-models.yaml"
+        description: "Run specific dbt models"
+        tags: ["data", "dbt", "models"]
+
+      - name: "meltano-run"
+        file: "meltano-run.yaml"
+        description: "Execute Meltano data ingestion pipelines"
+        tags: ["data", "meltano", "ingestion"]
+
+      - name: "airflow-cli"
+        file: "airflow-cli.yaml"
+        description: "Airflow command-line interface operations"
+        tags: ["data", "airflow", "cli"]
+
+      - name: "airflow-ui"
+        file: "airflow-ui.yaml"
+        description: "Access Airflow web UI"
+        tags: ["data", "airflow", "ui"]
+
+      - name: "db-query"
+        file: "db-query.yaml"
+        description: "Execute database queries"
+        tags: ["data", "database", "query"]
+
+  agent_operations:
+    name: "Agent Operations"
+    description: "Workflows for AI agent operations and automation"
+    color: "#E91E63"  # Pink for agents
+    icon: "🤖"
+    workflows:
+      - name: "agent-pr-loop"
+        file: "agent_pr_loop.yaml"
+        description: "Automated pull request workflow loop"
+        tags: ["agent", "pr", "automation"]
+
+      - name: "agent-test-suite"
+        file: "agent_test_suite.yaml"
+        description: "Run comprehensive agent test suite"
+        tags: ["agent", "testing", "validation"]
+
+  dev_environment:
+    name: "Development Environment"
+    description: "Workflows for development setup and environment management"
+    color: "#607D8B"  # Blue Grey for dev
+    icon: "🛠️"
+    workflows:
+      - name: "dev-environment"
+        file: "dev_environment.yaml"
+        description: "Setup and manage development environment"
+        tags: ["dev", "environment", "setup"]
+
+# Workflow discovery metadata
+discovery:
+  search_tags:
+    - "prp"
+    - "data"
+    - "agent"
+    - "dev"
+    - "spec"
+    - "execute"
+    - "create"
+    - "api"
+    - "dbt"
+    - "meltano"
+    - "airflow"
+
+  quick_access:
+    most_used:
+      - "prp-base-create"
+      - "prp-base-execute"
+      - "start-data-stack"
+      - "dbt-comprehensive"
+
+    recent_additions:
+      - "api-contract-define"
+      - "prp-planning-create"
+      - "task-list-init"
+
+    development_flow:
+      - "prp-base-create"
+      - "prp-base-execute"
+      - "agent-test-suite"
+
+    data_pipeline_flow:
+      - "start-data-stack"
+      - "meltano-run"
+      - "dbt-run-models"
+      - "check-stack-status"
+
+# Maintenance metadata
+maintenance:
+  validation_rules:
+    - "Each workflow must have a corresponding .yaml file"
+    - "All workflows must include proper tags"
+    - "Description should be concise and clear"
+    - "File names should follow kebab-case convention"
+
+  update_frequency: "weekly"
+  last_audit: "2024-01-20"
+
+  deprecated_workflows: []
+
+  migration_notes:
+    - "Added comprehensive categorization system"
+    - "Organized workflows by functional domains"
+    - "Added visual indicators (colors/icons) for UI enhancement"
+    - "Established quick access patterns for common workflows"
