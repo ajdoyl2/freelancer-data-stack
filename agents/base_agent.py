@@ -7,11 +7,13 @@ in the freelancer data stack. Built using Pydantic AI for type-safe interactions
 
 import asyncio
 import logging
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
+import aiohttp
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models import KnownModelName
@@ -176,23 +178,25 @@ class BaseAgent(ABC):
         """
         results = []
 
-        # Basic validation - check if model is accessible
+        # Check connectivity to the MCP server
         try:
-            # Simple test query to validate model connectivity
-            await self._agent.run("Hello, can you respond?")
-            results.append(
-                ValidationResult(
-                    check_name="model_connectivity",
-                    status=ResponseStatus.SUCCESS,
-                    message="Model is accessible and responding",
+            response = await self._mcp_request("/health", method="GET")
+            if response.get("status") == "healthy":
+                results.append(
+                    ValidationResult(
+                        check_name="mcp_connectivity",
+                        status=ResponseStatus.SUCCESS,
+                        message="MCP server is accessible and healthy",
+                    )
                 )
-            )
+            else:
+                raise Exception("MCP server reported unhealthy status")
         except Exception as e:
             results.append(
                 ValidationResult(
-                    check_name="model_connectivity",
+                    check_name="mcp_connectivity",
                     status=ResponseStatus.ERROR,
-                    message=f"Model connectivity failed: {str(e)}",
+                    message=f"MCP connectivity failed: {str(e)}",
                 )
             )
 
@@ -227,6 +231,30 @@ class BaseAgent(ABC):
             "timestamp": datetime.now().isoformat(),
         }
 
+    async def _mcp_request(
+        self, endpoint: str, method: str = "GET", **kwargs
+    ) -> dict[str, Any]:
+        """
+        Make a request to the MCP server.
+
+        Args:
+            endpoint: API endpoint to access
+            method: HTTP method (GET, POST, etc.)
+            **kwargs: Additional arguments passed to the request
+
+        Returns:
+            Dict[str, Any]: Response from the MCP server
+        """
+        url = f"http://localhost:8000{endpoint}"
+        headers = {"Authorization": f"Bearer {os.getenv('JWT_SECRET', '')}"}
+
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                method, url, headers=headers, **kwargs
+            ) as response:
+                response.raise_for_status()
+                return await response.json()
+
     async def run_with_retry(self, prompt: str, max_retries: int | None = None) -> Any:
         """
         Run agent with retry logic.
@@ -257,7 +285,7 @@ class BaseAgent(ABC):
             except TimeoutError:
                 self.logger.warning(f"Agent run timed out on attempt {attempt + 1}")
                 if attempt == max_retries:
-                    raise Exception("Agent run timed out after all retries")
+                    raise Exception("Agent run timed out after all retries") from None
 
             except Exception as e:
                 self.logger.warning(

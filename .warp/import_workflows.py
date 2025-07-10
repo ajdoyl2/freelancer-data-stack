@@ -2,269 +2,70 @@
 """
 Script to import AI agent workflows into Warp's database.
 This avoids the need to manually add each workflow through the UI.
+
+This script dynamically loads all YAML workflow files from .warp/workflows/
+and imports them into Warp's SQLite database, eliminating manual JSON curation.
 """
 
 import json
 import sqlite3
 from pathlib import Path
 
+import yaml
+
 # Warp database path
 WARP_DB_PATH = (
     Path.home() / "Library/Application Support/dev.warp.Warp-Stable/warp.sqlite"
 )
 
-# Workflows to add
-WORKFLOWS = [
-    {
-        "name": "AI Code Review",
-        "command": """echo 'Please perform a comprehensive code review of the following code. Focus on:
+# Workflows directory
+WORKFLOWS_DIR = Path(__file__).parent / "workflows"
 
-1. Code Quality & Style:
-   - PEP 8 compliance, type hints, docstrings
-   - Code organization and decomposition
-   - Import organization
 
-2. Functionality & Logic:
-   - Correctness and edge case handling
-   - Data validation and business logic alignment
-   - Algorithm efficiency
+def load_workflows_from_yaml():
+    """Load all YAML workflow files from the workflows directory."""
+    workflows = []
 
-3. Data Stack Integration:
-   - Dagster asset dependencies and resource usage
-   - dbt model structure and testing
-   - Database connection management
+    if not WORKFLOWS_DIR.exists():
+        print(f"⚠️  Workflows directory not found: {WORKFLOWS_DIR}")
+        return workflows
 
-4. Security & Best Practices:
-   - Input validation and injection prevention
-   - Secrets management
-   - Error handling and logging
+    yaml_files = list(WORKFLOWS_DIR.glob("*.yaml")) + list(WORKFLOWS_DIR.glob("*.yml"))
 
-5. Testing & Documentation:
-   - Test coverage and mock usage
-   - API documentation and examples
+    for yaml_file in yaml_files:
+        try:
+            with open(yaml_file, encoding="utf-8") as f:
+                workflow_data = yaml.safe_load(f)
 
-Provide specific recommendations with before/after code examples where helpful.'""",
-        "tags": ["ai", "code-review", "quality", "python", "dagster", "dbt"],
-        "description": "Comprehensive code review with quality, security, and performance analysis",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-    {
-        "name": "Data Pipeline Design",
-        "command": """echo 'Design a comprehensive data pipeline using our freelancer data stack:
+            # Transform YAML structure to match Warp's expected format
+            warp_workflow = {
+                "name": workflow_data.get("name", yaml_file.stem),
+                "command": workflow_data.get("command", ""),
+                "tags": workflow_data.get("tags", []),
+                "description": workflow_data.get("description", ""),
+                "arguments": workflow_data.get("arguments", []),
+                "source_url": workflow_data.get("source_url"),
+                "author": workflow_data.get("author"),
+                "author_url": workflow_data.get("author_url"),
+                "shells": workflow_data.get("shells", []),
+                "environment_variables": workflow_data.get("environment_variables"),
+            }
 
-Stack: Dagster (orchestration), dbt (transformation), DuckDB (warehouse), Streamlit (visualization)
-Infrastructure: Docker Compose, Poetry, PostgreSQL, Redis
+            # Handle complex workflow structures (like the PRP workflows)
+            if "commands" in workflow_data and "workflow" in workflow_data:
+                # For complex workflows, use the first command as the main command
+                if workflow_data["commands"]:
+                    first_command = workflow_data["commands"][0]
+                    warp_workflow["command"] = first_command.get("command", "")
 
-Please provide:
+            workflows.append(warp_workflow)
+            print(f"📄 Loaded workflow: {warp_workflow['name']} from {yaml_file.name}")
 
-1. Architecture Overview:
-   - Data flow from sources to consumption
-   - Component interaction diagram
-   - Technology stack integration
+        except Exception as e:
+            print(f"❌ Error loading {yaml_file.name}: {e}")
+            continue
 
-2. Implementation Strategy:
-   - Dagster assets and jobs structure
-   - dbt model organization (staging/intermediate/marts)
-   - Data quality framework with Great Expectations
-
-3. Quality & Performance:
-   - Error handling and retry mechanisms
-   - Monitoring and alerting setup
-   - Performance optimization strategies
-
-4. Detailed Design:
-   - Source system connections
-   - Transformation logic
-   - Storage optimization
-   - Scheduling and dependencies
-
-Provide specific code examples for Dagster assets and dbt models.'""",
-        "tags": ["ai", "data-pipeline", "architecture", "dagster", "dbt", "design"],
-        "description": "Design comprehensive data pipeline architecture with Dagster and dbt",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-    {
-        "name": "AI Debug Assistant",
-        "command": """echo 'Help me debug this issue systematically:
-
-1. Initial Analysis:
-   - Understand the error context and symptoms
-   - Identify the component (Dagster, dbt, DuckDB, Docker, etc.)
-   - Determine the data flow impact
-
-2. Investigation Steps:
-   - Check logs and error messages
-   - Verify service health (Docker, databases)
-   - Test connectivity and dependencies
-   - Review recent changes
-
-3. Data Stack Specific Checks:
-   - Dagster asset status and dependencies
-   - dbt model compilation and execution
-   - Database connections and queries
-   - Docker service status
-
-4. Resolution Strategy:
-   - Provide specific troubleshooting steps
-   - Suggest immediate fixes and long-term solutions
-   - Include prevention measures
-   - Recommend monitoring improvements
-
-Please provide actionable steps with specific commands where applicable.'""",
-        "tags": ["ai", "debugging", "troubleshooting", "dagster", "dbt", "docker"],
-        "description": "Systematic error analysis and troubleshooting for data stack issues",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-    {
-        "name": "Production Issue Triage",
-        "command": """echo 'PRODUCTION ISSUE TRIAGE - Emergency Response:
-
-🚨 IMMEDIATE ASSESSMENT:
-1. Impact Analysis:
-   - What services/data are affected?
-   - How many users/processes impacted?
-   - Data integrity concerns?
-
-2. Quick Stabilization:
-   - Can we rollback recent changes?
-   - Are there immediate workarounds?
-   - Need to pause automated processes?
-
-3. Service Health Check:
-   - Docker services: docker-compose ps
-   - Database connectivity
-   - Dagster pipeline status
-   - Data freshness validation
-
-🔍 ROOT CAUSE INVESTIGATION:
-1. Recent Changes:
-   - Git commits in last 24 hours
-   - Deployment timeline
-   - Configuration changes
-
-2. System Diagnostics:
-   - Resource usage (CPU, memory, disk)
-   - Error logs and patterns
-   - Network connectivity
-
-3. Data Pipeline Status:
-   - Failed Dagster runs
-   - dbt model failures
-   - Data quality check results
-
-🛠️ RESOLUTION & RECOVERY:
-Provide step-by-step recovery plan with rollback options.'""",
-        "tags": ["ai", "production", "emergency", "triage", "incident"],
-        "description": "Emergency production issue response and resolution",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-    {
-        "name": "dbt Model Development",
-        "command": """echo 'Help me develop a dbt model following freelancer data stack best practices:
-
-Stack Context: dbt-core 1.8.8, dbt-duckdb 1.9.4, DuckDB warehouse
-
-Please provide:
-
-1. Model Structure:
-   - Proper staging/intermediate/marts organization
-   - Materialization strategy (table/view/incremental)
-   - Partitioning and clustering recommendations
-
-2. SQL Best Practices:
-   - Optimized queries for DuckDB
-   - Proper use of dbt functions and macros
-   - Window functions and aggregations
-
-3. Testing & Documentation:
-   - dbt tests (unique, not_null, relationships)
-   - Custom data quality tests
-   - Model and column descriptions
-
-4. Performance Optimization:
-   - Incremental model patterns
-   - Efficient joins and filters
-   - Memory usage considerations
-
-5. Dependencies & Lineage:
-   - Source and ref() usage
-   - Proper dependency structure
-   - Dagster asset integration
-
-Provide complete model code with tests and documentation.'""",
-        "tags": ["ai", "dbt", "sql", "data-modeling", "optimization"],
-        "description": "Create optimized dbt models following best practices",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-    {
-        "name": "Dagster Asset Creation",
-        "command": """echo 'Help me create a Dagster asset following our data stack patterns:
-
-Stack: Dagster 1.8.13, integrated with dbt, DuckDB, DataHub
-
-Please provide:
-
-1. Asset Definition:
-   - Proper asset decorator usage
-   - Dependencies and partitioning
-   - Resource configuration
-
-2. Integration Patterns:
-   - dbt model execution
-   - Database connection handling
-   - Data quality validation
-
-3. Metadata & Monitoring:
-   - MaterializeResult with metadata
-   - Logging and observability
-   - Error handling and retries
-
-4. Testing Strategy:
-   - Unit tests for asset logic
-   - Integration tests with dependencies
-   - Mock patterns for external services
-
-5. Performance Considerations:
-   - Batch processing patterns
-   - Memory management
-   - Incremental processing
-
-Provide complete asset code with tests and documentation.'""",
-        "tags": ["ai", "dagster", "assets", "orchestration", "python"],
-        "description": "Create Dagster assets with proper dependencies and metadata",
-        "arguments": [],
-        "source_url": None,
-        "author": None,
-        "author_url": None,
-        "shells": [],
-        "environment_variables": None,
-    },
-]
+    return workflows
 
 
 def workflow_exists(conn, name):
@@ -300,14 +101,22 @@ def main():
         return
 
     print(f"🔧 Connecting to Warp database: {WARP_DB_PATH}")
+    print(f"📂 Loading workflows from: {WORKFLOWS_DIR}")
+
+    # Load workflows dynamically from YAML files
+    workflows = load_workflows_from_yaml()
+
+    if not workflows:
+        print("⚠️  No workflows found to import.")
+        return
 
     try:
         conn = sqlite3.connect(WARP_DB_PATH)
 
-        print(f"\n📝 Importing {len(WORKFLOWS)} AI agent workflows...")
+        print(f"\n📝 Importing {len(workflows)} workflows...")
 
         added_count = 0
-        for workflow in WORKFLOWS:
+        for workflow in workflows:
             if add_workflow(conn, workflow):
                 added_count += 1
 
@@ -315,12 +124,14 @@ def main():
         conn.close()
 
         print(f"\n🎉 Successfully imported {added_count} workflows!")
-        print("📱 Open Warp and press Cmd+P to access your new AI workflows.")
+        print("📱 Open Warp and press Cmd+P to access your new workflows.")
 
         if added_count > 0:
-            print("\n🎯 Try these workflows:")
-            for workflow in WORKFLOWS[:3]:  # Show first 3
+            print("\n🎯 Available workflows:")
+            for workflow in workflows[:5]:  # Show first 5
                 print(f"   • {workflow['name']}")
+            if len(workflows) > 5:
+                print(f"   • ... and {len(workflows) - 5} more")
 
     except Exception as e:
         print(f"❌ Error connecting to Warp database: {e}")

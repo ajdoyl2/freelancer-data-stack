@@ -6,7 +6,10 @@ FastAPI server that provides REST endpoints for the AI agent system.
 """
 
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, HTTPException
@@ -14,13 +17,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+# Add shared modules to path
+sys.path.append(str(Path(__file__).parent.parent / "mcp-servers" / "shared"))
+
+from security_middleware import RequestValidationMiddleware, SecurityMiddleware
+
 # Load environment variables
 load_dotenv()
 
 # Add parent directory to path for imports
-import sys
-from pathlib import Path
-
 sys.path.append(str(Path(__file__).parent.parent))
 
 from agents import get_agent, list_available_agents
@@ -120,13 +125,22 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
+# Add security middleware
+app.add_middleware(SecurityMiddleware, rate_limit_requests=100, rate_limit_window=60)
+app.add_middleware(RequestValidationMiddleware, max_request_size=10 * 1024 * 1024)
+
+# Add CORS middleware with secure configuration
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080"
+).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+    expose_headers=["X-Total-Count"],
+    max_age=600,  # 10 minutes
 )
 
 
@@ -145,7 +159,7 @@ async def health_check():
             environment=agent_configs.environment.value if agent_configs else "unknown",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}") from e
 
 
 # Process agent request
@@ -183,7 +197,7 @@ async def process_agent_request(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}") from e
 
 
 # Get available agents
@@ -211,7 +225,7 @@ async def get_agents():
         return AgentListResponse(agents=agents_list, total=len(agents_list))
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get agents: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get agents: {str(e)}") from e
 
 
 # Get agent details
@@ -222,10 +236,10 @@ async def get_agent_details(agent_role: str):
         # Convert string to AgentRole
         try:
             role = AgentRole(agent_role.lower())
-        except ValueError:
+        except ValueError as e:
             raise HTTPException(
                 status_code=404, detail=f"Agent role '{agent_role}' not found"
-            )
+            ) from e
 
         agent = get_agent(role)
         capabilities = await agent.get_capabilities()
@@ -251,7 +265,7 @@ async def get_agent_details(agent_role: str):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get agent details: {str(e)}"
-        )
+        ) from e
 
 
 # Get system configuration
@@ -272,7 +286,7 @@ async def get_configuration():
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get configuration: {str(e)}"
-        )
+        ) from e
 
 
 # Execute specific agent task
@@ -283,10 +297,10 @@ async def execute_agent_task(agent_role: str, task: str):
         # Convert string to AgentRole
         try:
             role = AgentRole(agent_role.lower())
-        except ValueError:
+        except ValueError as e:
             raise HTTPException(
                 status_code=404, detail=f"Agent role '{agent_role}' not found"
-            )
+            ) from e
 
         agent = get_agent(role)
         result = await agent.execute_task(task)
@@ -305,7 +319,7 @@ async def execute_agent_task(agent_role: str, task: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Task execution failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Task execution failed: {str(e)}") from e
 
 
 # Error handlers

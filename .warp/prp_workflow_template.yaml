@@ -1,0 +1,367 @@
+# PRP Workflow Template - Reusable YAML Scaffold
+# This template provides a standardized structure for Pull Request Process commands
+# that can be imported into Warp workflows_for_import.json
+
+# Template Structure:
+# - name: Human-readable workflow name
+# - description: Brief description of the workflow's purpose
+# - command: The actual command to execute (supports bash parameter expansion)
+# - tags: Array of relevant tags for categorization
+# - arguments: Array of argument definitions (optional)
+
+# Example PRP Commands:
+
+prp_workflows:
+  - name: "PRP - ${1:-Feature} Development"
+    description: "Complete pull request process for ${1:-feature} development with code review, testing, and deployment"
+    command: |
+      echo "🚀 Pull Request Process: ${1:-Feature} Development
+
+      📋 PRE-DEVELOPMENT CHECKLIST:
+      1. Branch Management:
+         - Create feature branch: git checkout -b feature/${2:-feature-name}
+         - Ensure main branch is up-to-date
+         - Set up tracking: git push -u origin feature/${2:-feature-name}
+
+      2. Development Environment:
+         - Verify dependencies: uv sync && uv --version
+         - Check dependency tree: uv tree
+         - Run tests: pytest ${3:-tests/}
+
+      3. Code Quality Setup:
+         - Pre-commit hooks enabled
+         - Linting configuration verified
+         - Type checking enabled
+
+      🔧 DEVELOPMENT PHASE:
+      1. Implementation:
+         - Follow SOLID principles (DIP, OCP compliance)
+         - Implement only needed features (YAGNI)
+         - Keep solutions simple and maintainable
+
+      2. Data Stack Integration:
+         - Airflow DAG patterns with task decorators
+         - DuckDB for analytics (cost-effective choice)
+         - Meltano for data ingestion
+         - dbt core for transformations
+
+      3. Testing Strategy:
+         - Unit tests for core logic
+         - Integration tests for data pipelines
+         - Pydantic AI agent compatibility
+
+      ✅ PRE-COMMIT VALIDATION:
+      1. Code Quality:
+         - Run linting and formatting
+         - Type checking passes
+         - Documentation updated
+
+      2. Testing:
+         - All tests pass: pytest ${3:-tests/}
+         - Coverage meets requirements
+         - Performance benchmarks
+
+      3. Data Pipeline Validation:
+         - dbt models compile: dbt compile
+         - dbt tests pass: dbt test
+         - Airflow DAG validation
+
+      🔍 PULL REQUEST CREATION:
+      1. PR Description Template:
+         - Clear summary of changes
+         - Link to relevant issues
+         - Testing evidence
+         - Breaking changes noted
+
+      2. Review Requirements:
+         - Code review checklist
+         - Architecture review if needed
+         - Security review for sensitive changes
+
+      📊 MONITORING & VALIDATION:
+      1. CI/CD Pipeline:
+         - All checks pass
+         - Performance metrics within limits
+         - \$50/month cost target maintained
+
+      2. Post-merge Validation:
+         - Services healthy
+         - Data quality maintained
+         - Agent integrations functional
+
+      Next Steps: Review checklist and proceed with ${1:-feature} development"
+    tags: ["prp", "pull-request", "development", "ci-cd", "quality", "airflow", "dbt"]
+    arguments:
+      - name: "feature_type"
+        description: "Type of feature being developed (e.g., 'Data Pipeline', 'API Endpoint', 'Dashboard')"
+        required: false
+      - name: "branch_name"
+        description: "Name for the feature branch"
+        required: false
+      - name: "test_path"
+        description: "Path to test directory or specific test files"
+        required: false
+
+  - name: "PRP - Code Review"
+    description: "Comprehensive code review process with quality, security, and architecture validation"
+    command: |
+      echo "🔍 Pull Request Code Review: ${1:-General Review}
+
+      📋 REVIEW CHECKLIST:
+
+      1. Code Quality & Style:
+         - PEP 8 compliance and type hints
+         - Clear variable/function naming
+         - Proper docstrings and comments
+         - Import organization
+
+      2. Architecture & Design:
+         - SOLID principles adherence
+         - High-level modules don't depend on low-level modules
+         - Open/closed principle compliance
+         - Simple, maintainable solutions
+
+      3. Data Stack Integration:
+         - Airflow DAG best practices (task decorators for 3.0)
+         - dbt model structure and testing
+         - DuckDB optimization patterns
+         - Meltano integration compliance
+
+      4. Security & Best Practices:
+         - Input validation and sanitization
+         - Secrets management (no hardcoded values)
+         - Error handling and logging
+         - Resource management
+
+      5. Testing & Documentation:
+         - Test coverage adequate (${2:-80%}+ target)
+         - Unit and integration tests
+         - API documentation updated
+         - README and inline docs current
+
+      6. Performance & Cost:
+         - \$50/month operational cost compliance
+         - Efficient resource usage
+         - Database query optimization
+         - Container allocation efficiency
+
+      7. Agent Integration:
+         - Pydantic AI agent compatibility
+         - Structured responses for autonomous operation
+         - MCP server tool integration
+
+      🎯 REVIEW FOCUS AREAS:
+      - Business logic correctness
+      - Data pipeline reliability
+      - Error handling robustness
+      - Scalability considerations
+
+      📝 FEEDBACK TEMPLATE:
+      ✅ Approved with minor suggestions
+      🔄 Needs changes before approval
+      ❌ Requires significant revision
+
+      Review target: ${1:-General Review} | Coverage: ${2:-80%}+"
+    tags: ["prp", "code-review", "quality", "security", "architecture", "testing"]
+    arguments:
+      - name: "review_focus"
+        description: "Specific area to focus review on (e.g., 'Data Pipeline', 'Security', 'Performance')"
+        required: false
+      - name: "coverage_target"
+        description: "Test coverage percentage target"
+        required: false
+
+  - name: "PRP - Deployment Validation"
+    description: "Pre-deployment validation and post-deployment verification process"
+    command: |
+      echo "🚀 Deployment Validation: ${1:-Production} Environment
+
+      🔍 PRE-DEPLOYMENT CHECKS:
+
+      1. Environment Verification:
+         - Target environment: ${1:-production}
+         - Dependencies verified: uv sync && uv --version
+         - Configuration validated
+         - Secrets management verified
+
+      2. Data Pipeline Validation:
+         - dbt models compile: dbt compile
+         - All tests pass: dbt test --select ${2:-all}
+         - Airflow DAG validation
+         - Database connectivity confirmed
+
+      3. Performance Verification:
+         - Resource usage within limits
+         - \$50/month cost target maintained
+         - Query performance acceptable
+         - Container allocation optimized
+
+      4. Integration Testing:
+         - Service health checks
+         - API endpoint validation
+         - Data quality verification
+         - Agent integration tests
+
+      ✅ DEPLOYMENT EXECUTION:
+      1. Backup Strategy:
+         - Database backup completed
+         - Configuration backup
+         - Rollback plan prepared
+
+      2. Deployment Process:
+         - Blue-green deployment if applicable
+         - Feature flags configured
+         - Monitoring alerts active
+
+      3. Validation Steps:
+         - Service startup verification
+         - Health check endpoints
+         - Data pipeline execution
+         - User acceptance testing
+
+      📊 POST-DEPLOYMENT MONITORING:
+      1. System Health:
+         - All services running
+         - Error rates normal
+         - Performance metrics stable
+         - Resource utilization optimal
+
+      2. Data Quality:
+         - Pipeline execution successful
+         - Data freshness validated
+         - Quality checks passing
+         - Downstream systems healthy
+
+      3. User Impact:
+         - No service disruption
+         - Feature functionality confirmed
+         - Performance maintained
+         - Cost targets met
+
+      🔧 ROLLBACK PROCEDURES:
+      - Immediate rollback triggers
+      - Rollback execution steps
+      - Communication plan
+      - Post-rollback validation
+
+      Deployment target: ${1:-production} | Test scope: ${2:-all}"
+    tags: ["prp", "deployment", "validation", "monitoring", "production", "rollback"]
+    arguments:
+      - name: "environment"
+        description: "Target deployment environment (e.g., 'staging', 'production')"
+        required: false
+      - name: "test_scope"
+        description: "Scope of tests to run (e.g., 'staging', 'critical', 'all')"
+        required: false
+
+  - name: "PRP - Emergency Hotfix"
+    description: "Emergency hotfix process for production issues"
+    command: |
+      echo "🚨 Emergency Hotfix Process: ${1:-Critical Issue}
+
+      ⚡ IMMEDIATE RESPONSE:
+
+      1. Impact Assessment:
+         - Issue: ${1:-Critical production issue}
+         - Severity: ${2:-High}
+         - Services affected: ${3:-Multiple}
+         - User impact assessment
+
+      2. Rapid Stabilization:
+         - Immediate containment actions
+         - Service health verification
+         - Data integrity protection
+         - User communication initiated
+
+      3. Quick Diagnostic:
+         - Error logs analysis
+         - Recent changes review
+         - Resource usage check
+         - Dependency validation
+
+      🔧 HOTFIX DEVELOPMENT:
+      1. Minimal Code Changes:
+         - Hotfix branch: git checkout -b hotfix/${4:-issue-fix}
+         - Targeted fix only
+         - No feature additions
+         - Minimal testing scope
+
+      2. Accelerated Testing:
+         - Critical path testing
+         - Regression prevention
+         - Performance impact check
+         - Data pipeline validation
+
+      3. Fast-track Review:
+         - Security check mandatory
+         - Code quality essentials
+         - Architecture impact review
+         - Documentation updates
+
+      🚀 EMERGENCY DEPLOYMENT:
+      1. Deployment Preparation:
+         - Backup current state
+         - Rollback plan ready
+         - Monitoring enhanced
+         - Team notification sent
+
+      2. Deployment Execution:
+         - Staged rollout if possible
+         - Real-time monitoring
+         - Health checks active
+         - Performance tracking
+
+      3. Post-deployment:
+         - Issue resolution verified
+         - System stability confirmed
+         - User impact resolved
+         - Monitoring continued
+
+      📋 FOLLOW-UP ACTIONS:
+      1. Root Cause Analysis:
+         - Detailed investigation
+         - Process improvement
+         - Prevention measures
+         - Documentation update
+
+      2. Technical Debt:
+         - Proper fix planning
+         - Code quality improvement
+         - Test coverage enhancement
+         - Architecture review
+
+      Issue: ${1:-Critical Issue} | Severity: ${2:-High} | Impact: ${3:-Multiple services}"
+    tags: ["prp", "hotfix", "emergency", "production", "incident", "critical"]
+    arguments:
+      - name: "issue_description"
+        description: "Brief description of the critical issue"
+        required: false
+      - name: "severity_level"
+        description: "Severity level (e.g., 'Critical', 'High', 'Medium')"
+        required: false
+      - name: "impact_scope"
+        description: "Scope of impact (e.g., 'Single service', 'Multiple services', 'All systems')"
+        required: false
+      - name: "fix_identifier"
+        description: "Identifier for the hotfix branch"
+        required: false
+
+# Usage Instructions:
+# 1. Copy desired workflow from this template
+# 2. Customize the command with specific parameters
+# 3. Update tags and arguments as needed
+# 4. Add to .warp/workflows_for_import.json
+# 5. Import into Warp using the workflow import feature
+
+# Parameter Expansion Examples:
+# ${1:-default_value} - Use $1 if set, otherwise use default_value
+# ${2:-feature-name} - Use $2 if set, otherwise use "feature-name"
+# ${3:-tests/} - Use $3 if set, otherwise use "tests/"
+
+# Integration with existing rules:
+# - Uses uv for package management
+# - Follows dbt core best practices
+# - Integrates with Airflow task decorators
+# - Maintains $50/month cost target
+# - Supports DuckDB and Meltano
+# - Ensures Pydantic AI agent compatibility

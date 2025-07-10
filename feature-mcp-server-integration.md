@@ -1,7 +1,7 @@
 ## FEATURE:
 
-- Comprehensive MCP server search of official integrations and community integrations
-- I would like to for sure implement this as an mcp server: https://github.com/disler/quick-data-mcp/tree/main
+- Comprehensive MCP server search of official integrations and community integrations aligning with the data stack compontents
+- also implement this as an mcp server: https://github.com/disler/quick-data-mcp/tree/main
 - build a method for testing all of these integrations
 - after integrations complete, make modifications to the agents to use these integrations
 

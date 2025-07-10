@@ -5,6 +5,7 @@ FastAPI-based service with plugin adapters for data tools
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -16,6 +17,7 @@ from adapters import (
     DuckDBAdapter,
     SnowflakeAdapter,
 )
+from adapters.quick_data_adapter import QuickDataAdapter
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from llm_gateway import LLMGateway
@@ -38,6 +40,7 @@ adapters: dict[str, Any] = {
     "snowflake": SnowflakeAdapter(),
     "duckdb": DuckDBAdapter(),
     "datahub": DataHubAdapter(),
+    "quick_data": QuickDataAdapter(),
 }
 
 
@@ -77,13 +80,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware
+# Add CORS middleware with secure configuration
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080"
+).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # GraphQL schema
@@ -177,6 +183,34 @@ async def answer_question(request: dict):
     """Answer data questions using LLM"""
     try:
         return await llm_gateway.answer_question(request)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Quick Data endpoints
+@app.post("/api/quick-data/load-dataset")
+async def load_quick_data_dataset(
+    file_path: str, dataset_name: str, sample_size: int = None
+):
+    """Load dataset into Quick Data MCP"""
+    try:
+        from adapters.quick_data_adapter import DatasetConfig
+
+        config = DatasetConfig(
+            file_path=file_path, dataset_name=dataset_name, sample_size=sample_size
+        )
+        async with adapters["quick_data"] as adapter:
+            return await adapter.load_dataset(config)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/quick-data/datasets")
+async def get_quick_data_datasets():
+    """Get loaded datasets from Quick Data MCP"""
+    try:
+        async with adapters["quick_data"] as adapter:
+            return await adapter.list_loaded_datasets()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
